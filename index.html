@@ -2127,7 +2127,14 @@
         // 【區塊十三】本地瀏覽器快取儲存與資料修復載入
         // ============================================================
 
+        // 宣告資料載入鎖定開關與快取 Key
+        let isLoadingData = false;
+        const STORAGE_KEY = 'EggpartyFarmData_V11';
+
         function autoSaveData() {
+            // 若目前正在進行資料載入與初始化，絕對不執行寫入覆蓋
+            if (isLoadingData) return;
+
             const mapState = [];
             document.querySelectorAll('.c-cell[data-crop]').forEach(cell => {
                 mapState.push({ z: cell.dataset.zone, r: cell.dataset.row, c: cell.dataset.col, crop: cell.dataset.crop, style: cell.dataset.style, lvl: cell.dataset.lvl });
@@ -2148,7 +2155,7 @@
                 document.querySelectorAll('.c-cell').forEach(cell => {
                     resetCell(cell);
                 });
-               
+                
                 // 2. 恢復地圖資料
                 if(totalPackage.map) {
                     totalPackage.map.forEach(item => {
@@ -2307,7 +2314,14 @@
         // 【區塊十五】全網頁 DOM 載入完畢守護初始化
         // ============================================================      
 
-        window.addEventListener('DOMContentLoaded', () => { initUI(); loadData(); });
+        window.addEventListener('DOMContentLoaded', () => { 
+            isLoadingData = true;  // 開啟載入保護鎖，避免 initUI 清空與觸發事件時將空資料覆寫至 LocalStorage
+            
+            initUI(); 
+            loadData(); 
+            
+            isLoadingData = false; // 畫面與資料皆渲染完畢，解除保護鎖
+        });
 
     </script>
 </body>
