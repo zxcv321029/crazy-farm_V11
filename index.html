@@ -3,648 +3,989 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>蛋仔派對瘋狂農場規劃器 V8.7 (結構優化防反藍版)</title>
+    <title>瘋農規劃器 V10</title>
     <style>
+    
+    /* ============================================================ */
+    /* 1. 全域配置與網頁主體背景                                      */
+    /* ============================================================ */
+
+        /* 定義網頁全域主題配色（CSS 變數） */
         :root {
-            --bg-main: #f0f4f8;
-            --bg-container: #ffffff;
-            --text-main: #2d3748;
-            --border-color: #cbd5e1;
-            --grid-line: #e2e8f0;
-            --navy-dark: #334155; 
-            --accent-blue: #475569;
+            --bg-main        : #f0f4f8; /* 主網頁背景色 */
+            --bg-container   : #ffffff; /* 主容器背景色 */
+            --text-main      : #2d3748; /* 主要文字顏色 */
+            --border-color   : #cbd5e1; /* 通用邊框顏色 */
+            --grid-line      : #e2e8f0; /* 主網格線顏色 */
+            --navy-dark      : #334155; /* 強調色 */
+            --accent-blue    : #475569; /* 強調色 */
+
+            --color-type-pu  : #000000; /* 普 */
+            --color-type-yi  : #00b050; /* 異 */
+            --color-type-huan: #00b0f0; /* 幻 */
+            --color-type-ju  : #ff0000; /* 巨 */
+            --color-type-jing: #2563eb; /* 晶 */
+            --color-type-liu : #a855f7; /* 流 */
+            --color-type-xing: #ed7d31; /* 星 */
         }
 
+        /* 全域全選設定：尺寸計算包含邊框與內距、網頁的字體優先順序 */
         * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+            box-sizing : border-box;
+            margin     : 0; /* 外距 */
+            padding    : 0; /* 內距 */
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, "Microsoft JhengHei", sans-serif;
         }
 
+        /* 網頁主體背景、彈性排版正中對齊與防反藍設定 */
         body {
-            background-color: var(--bg-main);
-            color: var(--text-main);
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            /* 全螢幕禁止反藍選取，提升連續塗鴉體驗 */
-            user-select: none;
+            background-color   : var(--bg-main);
+            color              : var(--text-main); 
+            padding            : 15px;
+            display            : flex;
+            flex-direction     : column;
+            align-items        : center;
+            min-height         : 100vh;
+            user-select        : none;
             -webkit-user-select: none;
         }
 
-        /* 頂部控制台 */
-        .header-container {
-            width: 100%;
-            max-width: 1850px;
-            text-align: center;
+    /* ============================================================ */
+    /* 2. 頂部大標題與 sticky 凍結控制台                              */
+    /* ============================================================ */
+
+        /* 頂部控制台：凍結視窗前 */
+        .c-header-container {
+            width        : 100%;
+            max-width    : 1850px;
+            text-align   : center;
             margin-bottom: 20px;
-            transition: all 0.2s;
+            transition   : all 0.2s;
         }
 
-        .header-container.frozen {
-            position: sticky;
-            top: 0;
-            z-index: 2000;
-            background: var(--bg-main);
-            padding-bottom: 10px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-            margin-bottom: 15px;
+        /* 頂部控制台：凍結視窗後 */
+        .c-header-container.c-frozen {
+            position      : sticky;
+            top           : 5px;
+            z-index       : 2000;
+            background    : var(--bg-main);
+            padding-bottom: 5px;
+            box-shadow    : 0 8px 30px rgba(0,0,0,0.12);
+            margin-bottom : 5px;
+            width         : 100%;
+            max-width     : 1850px;
+            margin-left   : auto;
+            margin-right  : auto;
         }
 
+        /* 標題動態大小與控制台外觀 */
         h1 {
-            font-size: 20px;
-            color: #1e3a8a;
-            margin-bottom: 8px;
-            transition: all 0.2s;
-        }
-        .header-container.frozen h1 {
-            font-size: 16px;
-            margin-bottom: 4px;
-            display: inline-block;
-            margin-right: 20px;
-        }
-        .header-container.frozen .controls {
-            padding: 10px 15px;
+            font-size    : 20px;
+            color        : #1e3a8a;
+            margin-top   : 5px;
+            margin-bottom: 10px;
+            text-align   : center;
         }
 
-        .controls {
-            background: var(--bg-container);
-            padding: 12px 18px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-            display: flex;
+        /* 控制台大白色箱型區域 */
+        .c-controls {
+            background    : var(--bg-container);
+            padding       : 10px 10px;
+            border-radius : 12px;
+            box-shadow    : 0 2px 8px rgba(0,0,0,0.06);
+            display       : flex;
             flex-direction: column;
-            gap: 8px;
-            align-items: center;
-            border: 1px solid #e2e8f0;
+            gap           : 5px;  /* 上下行的間距 */
+            align-items   : center;
+            border        : 1px solid #e2e8f0;
         }
 
-        .control-row {
-            display: flex;
-            gap: 14px;
-            align-items: center;
-            flex-wrap: wrap;
+        /* 控制台橫列排版與群組間距 */
+        .c-control-row {
+            display        : flex;
+            gap            : 10px;  /* 同行中的間距 */
+            align-items    : center;
+            flex-wrap      : wrap;  /* 自動換行 */
             justify-content: center;
-            width: 100%;
-            position: relative;
+            width          : 100%;
+            position       : relative;
         }
 
-        .control-group {
-            display: flex;
+        /* 元件內部小群組 */
+        .c-control-group {
+            display    : flex;
             align-items: center;
-            gap: 6px;
-            font-size: 14px;
+            gap        : 10px;  /* 同行中的間距 */
+            font-size  : 14px;
             font-weight: bold;
         }
 
-        .quick-crop-panel {
-            width: 100%;
-            display: flex;
-            gap: 5px;
-            flex-wrap: wrap;
-            justify-content: center;
-            align-items: center;
-            background: #f8fafc;
-            padding: 6px 10px;
+    /* ============================================================ */
+    /* 3. 控制台內部元件群                                            */
+    /* ============================================================ */
+
+        /* 第一排：[選定作物] 下拉選單 與 [果實] 數字輸入框 的共通樣式 */
+        select, input[type="number"] {
+            padding      : 3px 5px;
+            border       : 1px solid var(--border-color);
             border-radius: 8px;
-            border: 1px solid #e2e8f0;
+            font-size    : 14px;
+            outline      : none;
         }
 
-        .flex-break {
+        /* 第一排：型態按鈕通用樣式 */
+        .c-type-btn {
+            padding      : 4px 10px;
+            border       : 1px solid var(--border-color);
+            background   : #fff;
+            border-radius: 8px;
+            cursor       : pointer;
+            font-size    : 13px;
+            transition   : all 0.2s;
+        }
+        
+        /* 點擊後的物理陰影 */
+        .c-type-btn.c-active {
+            box-shadow : inset 0 1px 3px rgba(0,0,0,0.15);
+        }
+        
+        /* 各作物型態：字體配色 */
+        [data-type="普"] { color: var(--color-type-pu);   }
+        [data-type="異"] { color: var(--color-type-yi);   }
+        [data-type="幻"] { color: var(--color-type-huan); }
+        [data-type="巨"] { color: var(--color-type-ju);   }
+        [data-type="晶"] { color: var(--color-type-jing); }
+        [data-type="流"] { color: var(--color-type-liu);  }
+        [data-type="星"] { color: var(--color-type-xing); }
+        [data-type="清"] { color: var(--color-type-ju);   }
+        
+        /* 各作物型態：點擊時的配色 */
+        .c-type-btn[data-type="普"].c-active { background-color : #f1f5f9; border-color : #94a3b8; }   
+        .c-type-btn[data-type="異"].c-active { background-color : #e6f7ed; border-color : #00b050; }
+        .c-type-btn[data-type="幻"].c-active { background-color : #e6fafe; border-color : #00b0f0; }
+        .c-type-btn[data-type="巨"].c-active { background-color : #fef2f2; border-color : #ff0000; }
+        .c-type-btn[data-type="晶"].c-active { background-color : #eff6ff; border-color : #2563eb; }
+        .c-type-btn[data-type="流"].c-active { background : linear-gradient(135deg, #e0f2fe, #f3e8ff, #ffedd5); border-color: #a855f7 }
+        .c-type-btn[data-type="星"].c-active { background : linear-gradient(135deg, #bae6fd, #ecf5fa, #6294f1); border-color: #ed7d31 }
+        .c-type-btn[data-type="清"].c-active { background-color : #fef2f2; border-color : #ff0000; }
+
+        /* 凍結上方控制台核取方塊標籤 */
+        .c-freeze-label {
+            display      : flex;
+            align-items  : center;
+            gap          : 6px;
+            cursor       : pointer;
+            font-size    : 13px;
+            color        : #1e3a8a;
+            background   : #eff6ff;
+            padding      : 4px 10px;
+            border-radius: 6px;
+            border       : 1px solid #bfdbfe;
+        }
+
+        /* ============================================================ */
+        /* 4. 快捷作物面板                                               */
+        /* ============================================================ */
+
+        /* 第二排：快捷作物面板 */
+        .c-quick-crop-panel {
+            width          : 99.5%;
+            display        : flex;
+            gap            : 5px;
+            flex-wrap      : wrap;
+            justify-content: center;
+            align-items    : center;
+            background     : #f8fafc;
+            padding        : 5px 10px;
+            border-radius  : 12px;
+            border         : 1px solid #e2e8f0;
+        }
+        
+        /* 強制換行 */
+        .c-flex-break {
             flex-basis: 100%;
-            height: 4px;
-            width: 0;
+            height    : 0px;
+            width     : 0;
+        }
+        
+        /* 快捷作物小按鈕 */
+        .c-quick-crop-btn {
+            padding      : 2.5px 6px;
+            font-size    : 12px;
+            border       : 1px solid #cbd5e1;
+            border-radius: 6px;
+            cursor       : pointer;
+            transition   : all 0.15s;
         }
 
-        .quick-crop-btn {
-            padding: 4px 8px;
-            font-size: 12px;
-            font-weight: bold;
-            border: 1px solid #cbd5e1;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.15s;
-        }
-        .quick-crop-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        /* 進階懸浮小特效 */
+        .c-quick-crop-btn:hover {
+            transform   : translateY(-1px);
+            box-shadow  : 0 2px 4px rgba(0,0,0,0.08);
             border-color: #4b5563;
         }
         
-        .q-btn-至臻 { background-color: #f0f4ff; color: #1e40af; border-color: #bfdbfe; }
-        .q-btn-黃金 { background-color: #fffbeb; color: #b45309; border-color: #fde68a; }
-        .q-btn-紫色 { background-color: #faf5ff; color: #6b21a8; border-color: #e9d5ff; }
-        .q-btn-藍色 { background-color: #ecfeff; color: #0891b2; border-color: #c5f6fa; }
-        .q-btn-綠色 { background-color: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
-        .q-btn-灰色 { background-color: #f8fafc; color: #475569; border-color: #e2e8f0; }
-
-        .quick-crop-btn.active {
-            background-color: #1e3a8a !important;
-            color: white !important;
-            border-color: #1e3a8a !important;
-            box-shadow: 0 2px 5px rgba(30, 58, 138, 0.4);
-            transform: scale(1.05);
-        }
-
-        /* 優化型態按鈕啟動(active)樣式，防止文字變白 */
-        .type-btn {
-            padding: 4px 10px;
-            border: 1px solid var(--border-color);
-            background: #fff;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: bold;
-            transition: all 0.2s;
-        }
-        .type-btn.active {
-            background-color: #e0f2fe;
-            color: #1d4ed8;
-            border-color: #3b82f6;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .type-btn[data-type="普"].active { background-color: #e0f2fe; border-color: #3b82f6; color: #1d4ed8; }
-        .type-btn[data-type="幻"].active { background-color: #eff6ff; border-color: #2563eb; color: #1e40af; }
-        .type-btn[data-type="異"].active { background-color: #fff7ed; border-color: #ea580c; color: #c2410c; }
-        .type-btn[data-type="巨"].active { background-color: #fef2f2; border-color: #ef4444; color: #dc2626; }
-        .type-btn[data-type="流"].active {
-            background: linear-gradient(135deg, #e0f2fe, #f3e8ff, #ffedd5);
-            color: #6b21a8;
-            border-color: #a855f7;
-        }
-        .type-btn[data-type="星"].active {
-            background: linear-gradient(135deg, #e0f2fe, #f3e8ff, #ffedd5);
-            color: #1e3a8a;
-            border-color: #6366f1;
-        }
-        .type-btn[data-type="🗙清"].active { background-color: #f1f5f9; border-color: #475569; color: #334155; }
-
-        select, input[type="number"] {
-            padding: 5px 8px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            font-size: 14px;
-            outline: none;
-        }
-
-        .freeze-label {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            cursor: pointer;
-            font-size: 13px;
-            color: #1e3a8a;
-            background: #eff6ff;
-            padding: 4px 8px;
-            border-radius: 6px;
-            border: 1px solid #bfdbfe;
-        }
-
-        .btn {
-            padding: 5px 12px;
-            border: none;
-            border-radius: 6px;
-            font-size: 13px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .btn-primary { background-color: #3b82f6; color: white; }
-        .btn-success { background-color: #10b981; color: white; }
-        .btn-secondary { background-color: #64748b; color: white; }
-        .btn-danger { background-color: #ef4444; color: white; }
+        /* 依種子稀有度著色 */
+        .c-q-btn-至臻 { background-color: #f0f4ff; color: #2563eb; border-color: #bfdbfe; }
+        .c-q-btn-橙色 { background-color: #fffbeb; color: #ed7d31; border-color: #fde68a; }
+        .c-q-btn-紫色 { background-color: #faf5ff; color: #a855f7; border-color: #e9d5ff; }
+        .c-q-btn-藍色 { background-color: #ecfeff; color: #00b0f0; border-color: #c5f6fa; }
+        .c-q-btn-綠色 { background-color: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
+        .c-q-btn-灰色 { background-color: #f8fafc; color: #7f7f7f; border-color: #e2e8f0; }
         
-        .btn-move-inactive { background-color: #64748b; color: white; }
-        .btn-move-src { background-color: #d97706; color: white; animation: pulse 1.5s infinite; }
-        .btn-move-dst { background-color: #b45309; color: white; animation: pulse 1s infinite; }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.6; }
-            100% { opacity: 1; }
+        /* 按鈕被選中時的「高亮狀態」 */
+        .c-quick-crop-btn.c-active {
+            background-color: #fef2f2;
+            color           : #ff0000;
+            border-color    : #ff0000;
+            box-shadow      : 0 2px 5px rgba(30, 58, 138, 0.4);
         }
 
-        /* 核心佈局 */
-        .main-layout {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 15px;
-            width: 100%;
-            max-width: 1850px;
-            align-items: stretch; 
+        /* ============================================================ */
+        /* 5. 功能性按鈕區                                               */
+        /* ============================================================ */
+
+        /* 第三排：功能按扭通用樣式 */
+        .c-btn {
+            padding      : 4px 8px;
+            border       : none;
+            border-radius: 4px;
+            font-size    : 13px;
+            cursor       : pointer;
+            transition   : all 0.2s;
+            display      : inline-flex;
+            align-items  : center;
+            gap          : 5px;
+        }
+        .c-btn:hover {
+            opacity      : 0.7;
+        }
+        .c-btn:active {
+            transform    : scale(0.98);
+            box-shadow   : inset 0 2px 4px rgba(0, 0, 0, 0.15);
         }
 
-        @media (min-width: 1400px) {
-            .main-layout {
-                grid-template-columns: 370px 1fr 370px;
-                justify-content: center;
+        /* 各功能按扭樣式 */
+        .c-btn-paint          { background-color: #2563eb; color: white; } /* 塗鴉按鈕：關閉 */
+        .c-btn-paint.c-active { background-color: #10b981; color: white; } /* 塗鴉按鈕：開啟 */
+
+        .c-btn-move-inactive  { background-color: #64748b; color: white; } /* 移動按鈕：關閉 */
+        .c-btn-move-src       { background-color: #d97706; color: white; animation: pulse-move 2.0s infinite; } /* 移動按鈕：起點 */
+        .c-btn-move-dst       { background-color: #b45309; color: white; animation: pulse-move 1.5s infinite; } /* 移動按鈕：終點 */
+
+        .c-btn-copy-inactive  { background-color: #64748b; color: white; } /* 複製按鈕 */
+        .c-btn-copy-src       { background-color: #7c3aed; color: white; animation: pulse-copy 2.0s infinite; } /* 複製按鈕：擷起 */
+        .c-btn-copy-dst       { background-color: #6d28d9; color: white; animation: pulse-copy 1.5s infinite; } /* 複製按鈕：關閉 */
+
+        .c-btn-save           { background-color: #10b981; color: white; } /* 保存按鈕 */
+        .c-btn-backup         { background-color: #4b5563; color: white; } /* 備份按鈕 */
+        .c-btn-restore        { background-color: #4b5563; color: white; } /* 還原按鈕 */
+        .c-btn-clear-all      { background-color: #ef4444; color: white; } /* 全清按鈕 */
+
+        /* 狀態標籤與互斥動畫 */
+        .c-status-tag {
+            font-size  : 13px;
+            color      : #059669;
+            display    : inline-flex;
+            align-items: center;
+            margin-left: 5px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        /* 隱藏的檔案上傳控制項：確保完全不佔空間與隱形 */
+        .c-hidden-file-input {
+            display       : none;
+            width         : 0;
+            height        : 0;
+            opacity       : 0;
+            pointer-events: none;
+        }
+
+        /* 呼吸燈特效 */
+        @keyframes pulse-move { 0% { opacity: 1.0; } 50% { opacity: 0.6; } 100% { opacity: 1.0; } }
+        @keyframes pulse-copy { 0% { opacity: 1.0; } 50% { opacity: 0.6; } 100% { opacity: 1.0; } }
+
+        /* ============================================================ */
+        /* 6. 核心佈局架構（三欄式主要版面）                              */
+        /* ============================================================ */
+
+        /* 主要區塊：預設為電腦寬螢幕三欄橫向佈局 */
+        .c-main-layout {
+            display              : grid;
+            grid-template-columns: 400px 1fr 400px;
+            justify-content      : center;
+            gap                  : 15px;
+            width                : 100%;
+            min-width            : 900px;
+            max-width            : 1850px;
+            align-items          : stretch; 
+            margin: 0 auto;
+        }
+        
+        /* 當螢幕寬度小於 1400px 時（手機/平板），自動切換為直列單欄佈局 */
+        @media (max-width: 1399px) {
+            .c-main-layout {
+                grid-template-columns: 1fr;
+                max-width            : 100%;
             }
         }
 
-        .sidebar-left, .sidebar-right {
-            display: flex;
+        /* ============================================================ */
+        /* 7. 左右側邊欄與卡片容器基礎樣式                                 */
+        /* ============================================================ */
+
+        /* 7.1 外層結構與卡片容器 */
+
+        /* [外框] 左右側邊欄：基礎垂直彈性佈局 */
+        .c-sidebar-left, .c-sidebar-right {
+            display       : flex;
             flex-direction: column;
         }
-
-		.panel-content-card {
-			background: var(--bg-container);
-			padding: 16px;
-			border-radius: 12px;
-			box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-			display: flex;
+		
+        /* [卡片] 側邊卡片：內容箱體白色容器外觀 */
+        .c-panel-content-card {
+			background    : var(--bg-container);
+			padding       : 16px;
+			border-radius : 12px;
+			box-shadow    : 0 4px 10px rgba(0,0,0,0.05);
+			display       : flex;
 			flex-direction: column;
-			max-height: 1800px;
-			border: 1px solid #e2e8f0;
+			max-width     : 600px;
+            max-height    : 1800px;
+			border        : 1px solid #e2e8f0;
 		}
+        
+        /* [卡片頂部] 標題列樣式 */
+        .c-panel-title {
+            font-size    : 16px;
+            font-weight  : bold;
+            color        : #1e3a8a;
+            margin-bottom: 12px;
+            display      : flex;
+            align-items  : center;
+            gap          : 6px;
+            flex-shrink  : 0;
+        }
+        
+        /* [卡片次層] 頂部四格快訊數據儀表板 (左右側邊欄通用) */
+        .c-grid-summary-box, .c-bag-summary-box {
+            background           : #f8fafc;   
+            border               : 1px solid #e2e8f0;
+            border-radius        : 8px;
+            padding              : 10px;
+            margin-bottom        : 12px;
+            display              : grid;
+            grid-template-columns: 1fr 1fr;
+            gap                  : 8px;
+            font-size            : 14px;
+            flex-shrink          : 0;
+        }
 
-        .table-scroll-container {
-            flex: 1;
-            overflow-y: auto; 
+        /* 數據儀表板：單一小卡片外觀 */
+        .c-summary-item  { display: flex; flex-direction: column; background: #ffffff; padding: 6px; border-radius: 4px; border: 1px solid #f1f5f9; }
+        .c-summary-label { color: #64748b; font-weight: 500; }
+        .c-summary-val   { font-size: 14px; font-weight: bold; color: #2563eb; margin-top: 2px; }
+
+        /* [卡片內部] 側邊卡片：滾動條獨立限制容器 */
+        .c-table-scroll-container {
+            flex         : 1;
+            overflow-y   : auto; 
             padding-right: 2px;
         }
 
-        .map-wrapper {
-            background: var(--bg-container);
-            padding: 16px;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            border: 1px solid #e2e8f0;
-        }
+        /* 7.2 表格通用基底與特殊列 */
 
-        .panel-title {
-            font-size: 16px;
-            font-weight: bold;
-            color: #1e3a8a;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            flex-shrink: 0;
-        }
-
-        .inventory-table, .stats-table {
-            width: 100%;
+        /* 左側庫存表格基底 */
+        .c-inventory-table {
+            width          : 100%;
             border-collapse: collapse;
+            table-layout   : fixed ;
+        }
+
+        /* 右側統計表格基底 */
+        .c-stats-table {
+            width          : 100% ;
+            border-collapse: collapse;
+            table-layout   : auto ;
         }
         
-        .inventory-table th, .inventory-table td {
-            font-size: 10px !important;
-        }
-        
-        .inventory-table th, .stats-table th {
-            background: #f8fafc;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            padding: 6px 2px;
+        /* 表格：頂部欄位標題 (th) */
+        .c-inventory-table th, .c-stats-table th {
+            background   : #f8fafc;
+            position     : sticky;
+            top          : 0;
+            z-index      : 10;
+            padding      : 6px 2px;
             border-bottom: 2px solid #e2e8f0;
-            color: #64748b;
-        }
-        .inventory-table td {
-            padding: 4px 1px;
-            border-bottom: 1px solid #f1f5f9;
-            text-align: center;
+            color        : #64748b;
+            font-size    : 10px;
         }
         
-        .stats-table th, .stats-table td {
-            font-size: 12px;
-        }
-        .stats-table td {
-            padding: 6px 2px;
+        /* 表格：資料格 (td) */
+        .c-inventory-table td, .c-stats-table td {
+            padding      : 4px 1px;
             border-bottom: 1px solid #f1f5f9;
-            text-align: center;
+            text-align   : center;
+            font-size    : 10px;
+        }
+        
+        /* [特殊列] 系列大標題列 */
+        .c-cat-row {
+            background  : #f1f5f9;
+            font-weight : bold !important;
+            text-align  : left !important;
+            padding-left: 6px  !important;
+            color       : #475569;
+        }
+        
+        /* [特殊列] 系列小計列 */
+        .c-cat-sum-row {
+            background : #fff1f2;
+            font-weight: bold !important;
+            color      : #e11d48;
         }
 
-        .stats-table tr.highlighted-row {
-            background-color: #ffedd5 !important;
-            outline: 2px solid #f97316;
-            z-index: 5;
+        /* 7.3 左側「背包庫存」內部元件 */
+        
+        /* 背包全場總計列 */
+        .c-global-inv-sum-row {
+            background : #e0f2fe;
+            font-weight: bold !important;
+            color      : #0369a1;
         }
 
-        .cat-row {
-            background: #f1f5f9;
-            font-weight: bold !important;
-            text-align: left !important;
-            padding-left: 8px !important;
-            color: #475569;
-        }
-        .cat-sum-row {
-            background: #fff1f2;
-            font-weight: bold !important;
-            color: #e11d48;
-        }
-        .global-inv-sum-row {
-            background: #e0f2fe;
-            font-weight: bold !important;
-            color: #0369a1;
-        }
-
-        .clickable-crop {
-            cursor: pointer;
+        /* 可點選之作物文字 (第一欄) */
+        .c-clickable-crop {
+            cursor     : pointer;
             font-weight: bold;
         }
-        .clickable-crop:hover {
-            background-color: #eff6ff;
-            text-decoration: underline;
+        .c-clickable-crop:hover {
+            background-color: #ffffcc;
+            text-decoration : underline;
         }
 
-        .inv-input {
-            width: 36px;
-            padding: 2px 1px;
-            text-align: center;
-            border: 1px solid #cbd5e1;
-            border-radius: 4px;
-            font-size: 10px !important;
+        /* 背包靜態唯讀欄位 (第二、三欄：重量、價格) */
+        .c-inv-static-input {
+            background    : transparent;
+            border        : none;
+            text-align    : center;
+            color         : #555;
+            pointer-events: none;
+            width         : 100%;
+            font-size     : 10px;
+        }
+
+        /* 背包數字輸入框 (第四~六欄：普、異、幻) */
+        .c-inv-input {
+            width          : 100%;
+            padding        : 3px 0px !important;
+            text-align     : center;
+            border         : 1px solid #cbd5e1;
+            border-radius  : 4px;
+            font-size      : 10px !important;
+            box-sizing     : border-box !important;
             -moz-appearance: textfield;
+            appearance     : textfield;
         }
-        .inv-input::-webkit-outer-spin-button,
-        .inv-input::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-        .inv-input::placeholder {
-            color: #94a3b8;
-            font-weight: normal;
+        .c-inv-input::-webkit-outer-spin-button,
+        .c-inv-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .c-inv-input::placeholder               { color: #94a3b8; font-weight: normal; }
+
+        /* 單列總計唯讀顯示格 (第七欄：總) */
+        .c-inv-total-display {
+            background    : #fff5f5 !important;
+            color         : #e11d48 !important;
+            font-weight   : bold !important;    
+            text-align    : center;
+            border        : none !important;
+            font-size     : 10px;
         }
 
-        .map-container {
-            display: grid;
+        /* 背包文字縮排輔助類別 */
+        .c-text-indent-sm { text-align: left !important; padding-left:  4px !important; }
+        .c-text-indent-lg { text-align: left !important; padding-left: 20px !important; }
+
+        /* 7.4 右側「田間統計」內部元件 */
+
+        /* 表格最上方「全部田間總計」列 */
+        .c-total-type-row { background: #eff6ff !important; font-weight: bold; color: #1e40af; }
+
+        /* 滑鼠懸停互動高亮列 */
+        .c-stats-table tr.c-highlighted-row {
+            background-color: #ffedd5;
+            outline         : 2px solid #f97316;
+            z-index         : 5;
+        }
+
+        /* 錯誤系列標題與小計列 (警示度提升) */
+        .c-cat-row-error {
+            background  : #f87171 !important;
+            color       : #ffffff !important;
+            font-weight : bold !important;
+            text-align  : left !important;
+            padding-left: 6px !important;
+        }
+        .c-cat-sum-row-error {
+            background : #fef2f2 !important;
+            font-weight: bold !important;
+            color      : #dc2626 !important;
+        }
+        
+        /* 統計資料細節排版與色彩 */
+        .c-stat-text-left  { text-align: left !important; padding-left: 6px !important; }
+        .c-stat-head-title { color: #1e40af; font-weight: bold; text-align: left; padding-left: 4px; }
+        .c-stat-text-danger{ color: #b91c1c; font-weight: bold; }
+
+        .c-stat-bg-total      { background: #dbeafe; color: #1e40af; font-weight: bold; }
+        .c-stat-bg-fruit      { background: #ffe4e6; color: #b91c1c; font-weight: bold; }
+        .c-stat-bg-sub        { background: #f8fafc; font-weight: bold; }
+        .c-stat-bg-item-fruit { background: #fff5f5; color: #e11d48; font-weight: bold; }
+
+        .c-stat-item-row { cursor: pointer; }
+        .c-no-data-msg   { color: #94a3b8; padding: 20px 0; text-align: center; }
+        
+        /* ============================================================ */
+        /* 8. 中間地圖區欄位佈局（Map Wrapper / Container）               */
+        /* ============================================================ */
+
+        /* 地圖外包裝白色大外箱 */
+        .c-map-wrapper {
+            background     : var(--bg-container);
+            padding        : 16px;
+            border-radius  : 12px;
+            box-shadow     : 0 4px 10px rgba(0,0,0,0.05);
+            display        : flex;
+            flex-direction : column;
+            justify-content: center;
+            align-items    : center;
+            border         : 1px solid #e2e8f0;
+        }
+
+        /* 地圖主容器：2x4 區域網格分佈 */
+        .c-map-container {
+            display              : grid;
             grid-template-columns: repeat(2, auto);
-            gap: 20px 30px;
-            justify-content: center;
-            padding: 10px;
+            gap                  : 20px 30px;
+            justify-content      : center;
+            padding              : 10px;
         }
 
-        .zone { 
-            display: flex; 
+        /* 單個區域容器（含標題與 10x10 地圖） */
+        .c-zone { 
+            display       : flex; 
             flex-direction: column; 
-            position: relative;
+            position      : relative;
         }
         
-        .zone-title {
-            font-size: 13px;
-            font-weight: bold;
-            color: #475569;
+        /* 區域上方小灰色標題列 */
+        .c-zone-title {
+            font-size    : 13px;
+            font-weight  : bold;
+            color        : #475569;
             margin-bottom: 5px;
-            text-align: center;
-            background: #e2e8f0;
+            text-align   : center;
+            background   : #e2e8f0;
             border-radius: 4px;
-            padding: 2px 0;
+            padding      : 2px 0;
+            transition   : all 0.2s;
         }
 
-        .grid-10x10 {
-            display: grid;
+        /* 交換模式開啟時，標題顯示為可點擊游標 */
+        body.is-move-mode .c-zone-title       { cursor: pointer;}
+        body.is-move-mode .c-zone-title:hover { background: #cbd5e1; }
+
+        /* 批次交換待選中起點田地的發光樣式 */
+        .c-zone-title.c-zone-pending-source {
+            outline         : 0.5px dashed #d97706 ;
+            background-color: #fef3c7 ;
+            color           : #b45309 ;
+        }
+
+        /* 核心 10x10 網格：含最外圍座標軸（8x8田地 + 四週座標） */
+        .c-grid-10x10 {
+            display              : grid;
             grid-template-columns: 24px repeat(8, 42px) 24px;
-            grid-template-rows: 24px repeat(8, 42px) 24px;
-            border: 2px solid var(--accent-blue);
-            background: #ffffff;
-            position: relative;
+            grid-template-rows   : 24px repeat(8, 42px) 24px;
+            border               : 2px solid var(--accent-blue);
+            background           : #ffffff;
+            position             : relative;
         }
 
-        .axis-label {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 10px;
-            font-weight: bold;
-            color: #64748b;
+        /* 邊緣座標軸文字樣式 */
+        .c-axis-label {
+            display         : flex;
+            justify-content : center;
+            align-items     : center;
+            font-size       : 10px;
+            font-weight     : bold;
+            color           : #64748b;
             background-color: #f1f5f9;
-            user-select: none;
-            transition: all 0.15s;
+            user-select     : none;
+            transition      : all 0.15s;
         }
-        .axis-empty {
-            background-color: #e2e8f0;
-        }
-
-        .axis-label.axis-highlighted {
-            background-color: #ffedd5 !important;
-            color: #ea580c !important;
-            font-size: 11px !important;
-            text-shadow: 0px 0px 1px rgba(234, 88, 12, 0.4);
-        }
-
-        .cell {
-            width: 42px;
-            height: 42px;
-            border: 1px solid var(--grid-line);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            position: relative;
-            background-color: #ffffff;
-            overflow: hidden;
-        }
-        .cell:hover { outline: 2px solid #3b82f6; z-index: 10; }
         
-        .cell.crop-highlight-active {
-            outline: 3px solid #f97316 !important;
-            z-index: 12;
+        /* 座標軸最外圍四個死角空白格 */
+        .c-axis-empty { background-color: #e2e8f0; }
+
+        /* 滑鼠懸停於地圖時，對應十字坐標軸的高亮效果 */
+        .c-axis-label.c-axis-highlighted {
+            background-color: #ffedd5 ;
+            color           : #ea580c ;
+            font-size       : 10px      ;
+            text-shadow     : 0px 0px 1px rgba(234, 88, 12, 0.4);
+        }
+
+        /* 地圖核心單一格耕地（土地）樣式 */
+        .c-cell {
+            width           : 42px;
+            height          : 42px;
+            border          : 1px solid var(--grid-line);
+            display         : flex;
+            flex-direction  : column;
+            justify-content : center;
+            align-items     : center;
+            cursor          : pointer;
+            position        : relative;
+            background-color: #ffffff;
+            overflow        : hidden;
+        }
+        .c-cell:hover { outline: 0.5px solid #3b82f6; z-index: 10; }
+        
+        /* 點選統計面板特定作物時，地圖中同種作物全場「集體發光」特效 */
+        .c-cell.c-crop-highlight-active {
+            outline   : 0.5px dashed #f97316 !important;
+            z-index   : 12;
             box-shadow: 0 0 8px rgba(249, 115, 22, 0.6);
         }
 
-        .cell.move-pending-source {
-            outline: 3px dashed #d97706 !important;
-            background-color: #fef3c7 !important;
-            z-index: 15;
+        /* 🔄 交換模式下，被點選的第一格「待搬移起點」虛線框與亮黃底特效 */
+        .c-cell.c-move-pending-source {
+            outline         : 1.5px dashed #d97706 !important;
+            background-color: #ffffcc !important;
+            z-index         : 15;
+        }
+
+        /* 📋 複製模式下，被點選的第一格「待複製源」紫色虛線框與淡紫底特效 */
+        .c-cell.c-copy-pending-source {
+            outline         : 1.5px dashed #7c3aed !important;
+            background-color: #f3e8ff !important;            
+            z-index         : 15;                            
+        }
+
+        /* 田間文字：上方作物簡稱 */
+        .c-cell .c-crop-text { 
+            font-size    : 13px; 
+            font-weight  : bold;
+            line-height  : 1.2; 
+            text-align   : center; 
+            z-index      : 2; 
+            margin-bottom: 2px;
         }
         
-        .cell .crop-text { 
-            font-size: 11px; 
-            font-weight: bold;
-            line-height: 1.2; 
-            text-align: center; 
-            z-index: 2; 
-            margin-bottom: 1px;
-        }
-        .cell .level-text { 
-            font-size: 10px; 
+        /* 田間文字：下方型態＋果實數量 */
+        .c-cell .c-level-text { 
+            font-size  : 11px;
             font-weight: bold;
             line-height: 1.2;
-            text-align: center;
-            z-index: 2; 
+            text-align : center;
+            z-index    : 2; 
         }
 
-        /* 作物背景色定義 */
-        .bg-cat-黃金 { background-color: rgba(255, 247, 237, 0.7) !important; }
-        .bg-cat-紫色 { background-color: rgba(250, 245, 255, 0.7) !important; }
-        .bg-cat-藍色 { background-color: rgba(240, 253, 250, 0.7) !important; }
-        .bg-cat-綠色 { background-color: rgba(240, 253, 244, 0.7) !important; }
-        .bg-cat-灰色 { background-color: rgba(248, 250, 252, 0.7) !important; }
+        /* 作物文字及背景顏色定義 */
+        .t-至臻 { color: #2563eb; }
+        .t-橙色 { color: #ed7d31; }
+        .t-紫色 { color: #a855f7; }
+        .t-藍色 { color: #00b0f0; }
+        .t-綠色 { color: #16a34a; }
+        .t-灰色 { color: #7f7f7f; }
+        .t-錯誤 { color: #dc2626; }
 
-        /* 至臻系列輕盈柔和半透明色格式 */
-        .bg-crop-大菊 { background-color: rgba(254, 240, 138, 0.6) !important; } 
-        .bg-crop-葵花 { background-color: rgba(253, 224, 71, 0.6) !important; }  
-        .bg-crop-松樹 { background-color: rgba(187, 247, 208, 0.6) !important; }  
-        .bg-crop-掌象 { background-color: rgba(134, 239, 172, 0.55) !important; }  
-        .bg-crop-奇菇 { background-color: rgba(253, 186, 116, 0.55) !important; }  
-        .bg-crop-蟠桃 { background-color: rgba(254, 205, 211, 0.6) !important; }  
-        .bg-crop-葡萄 { background-color: rgba(233, 213, 255, 0.65) !important; }  
-        .bg-crop-天椒 { background-color: rgba(252, 165, 165, 0.55) !important; }  
-        .bg-crop-彼岸 { background-color: rgba(254, 163, 180, 0.55) !important; }  
-        .bg-crop-幻月 { background-color: rgba(214, 211, 242, 0.65) !important; }  
-        .bg-crop-龍狗 { background-color: rgba(244, 114, 182, 0.5) !important; }   
-        .bg-crop-紅包 { background-color: rgba(248, 113, 113, 0.5) !important; }   
-        .bg-crop-蘆薈 { background-color: rgba(201, 230, 133, 0.6) !important; }  
-        .bg-crop-月蟾 { background-color: rgba(176, 196, 222, 0.6) !important; }  
-        .bg-crop-月兔 { background-color: rgba(226, 232, 240, 0.65) !important; }  
-        .bg-crop-影梅 { background-color: rgba(244, 182, 214, 0.55) !important; }  
-        .bg-crop-星玫 { background-color: rgba(147, 197, 253, 0.6) !important; }  
+        .bg-cat-橙色 { background-color: #fffbeb; }
+        .bg-cat-紫色 { background-color: #faf5ff; }
+        .bg-cat-藍色 { background-color: #ecfeff; }
+        .bg-cat-綠色 { background-color: #f0fdf4; }
+        .bg-cat-灰色 { background-color: #f8fafc; }
+        .bg-cat-錯誤 { background-color: #ffe4e6; }
 
-        /* 文字與型態樣式 */
-        .t-至臻 { color: rgb(0, 0, 204) !important; }
-        .t-黃金 { color: #c2410c; }
-        .t-紫色 { color: #6b21a8; }
-        .t-藍色 { color: rgb(0, 150, 214) !important; }
-        .t-綠色 { color: #15803d; }
-        .t-灰色 { color: rgb(100, 116, 139) !important; }
+        /* 至臻系列作物專屬獨立半透明底色 */
+        .bg-crop-大王 { background-color: rgba(254, 240, 138, 0.60); } 
+        .bg-crop-葵花 { background-color: rgba(253, 224, 071, 0.60); }  
+        .bg-crop-松樹 { background-color: rgba(187, 247, 208, 0.60); }  
+        .bg-crop-仙象 { background-color: rgba(134, 239, 172, 0.55); }  
+        .bg-crop-奇菇 { background-color: rgba(253, 186, 116, 0.55); }  
+        .bg-crop-蟠桃 { background-color: rgba(254, 205, 211, 0.60); }  
+        .bg-crop-葡萄 { background-color: rgba(233, 213, 255, 0.65); }  
+        .bg-crop-天椒 { background-color: rgba(252, 165, 165, 0.55); }  
+        .bg-crop-彼岸 { background-color: rgba(254, 163, 180, 0.55); }  
+        .bg-crop-幻月 { background-color: rgba(214, 211, 242, 0.65); }  
+        .bg-crop-龍狗 { background-color: rgba(244, 114, 182, 0.50); }   
+        .bg-crop-紅包 { background-color: rgba(248, 113, 113, 0.50); }   
+        .bg-crop-蘆薈 { background-color: rgba(201, 230, 133, 0.60); }  
+        .bg-crop-月蟾 { background-color: rgba(176, 196, 222, 0.60); }  
+        .bg-crop-月兔 { background-color: rgba(226, 232, 240, 0.65); }  
+        .bg-crop-梅樹 { background-color: rgba(244, 182, 214, 0.55); }  
+        .bg-crop-星玫 { background-color: rgba(147, 197, 253, 0.60); }
+        .bg-crop-蹄蓮 { background-color: rgba(238, 242, 247, 0.70); }
+        .bg-crop-幽幽 { background-color: rgba(222, 242, 245, 0.70); }
+        .bg-crop-舞拉 { background-color: rgba(244, 182, 214, 0.60); }
         
-        .t-style-幻 .level-text { color: #1d4ed8 !important; font-weight: 900 !important; font-size: 11px; }
-        .t-style-異 .level-text { color: #ea580c !important; font-weight: 900 !important; font-size: 11px; }
-        .t-style-巨大 .level-text { color: #ef4444 !important; font-weight: 900 !important; font-size: 11px; }
+        /* 進階特殊型態之數字與字體加粗強調樣式 */
+        .t-style-異 .c-level-text { color: #00b050; font-size: 11px; font-weight: bold; }
+        .t-style-幻 .c-level-text { color: #00b0f0; font-size: 11px; font-weight: bold; }
+        .t-style-巨 .c-level-text { color: #ff0000; font-size: 11px; font-weight: bold; }
+        .t-style-晶 .c-level-text { color: #2563eb; font-size: 11px; font-weight: bold; }
         
-        .bg-style-流光 { 
-            background: linear-gradient(135deg, rgba(204,246,255,0.7) 0%, rgba(227,213,255,0.7) 40%, rgba(255,203,228,0.7) 70%, rgba(255,233,197,0.7) 100%) !important; 
-            box-shadow: inset 0 0 3px rgba(168, 85, 247, 0.3);
+        .bg-style-流 { 
+            background: linear-gradient(135deg, #e0f2fe, #f3e8ff, #ffedd5); 
+            box-shadow: inset 0 0 8px rgba(168, 85, 247, 0.3);
         }
-        .t-style-流光 .crop-text { color: #2d3748 !important; }
-        .t-style-流光 .level-text { color: #7c3aed !important; font-weight: 900 !important; font-size: 11px; }
+        .t-style-流 .c-level-text { color: #a855f7; font-size: 11px; font-weight: bold;}
+        
+        .bg-style-星 { 
+            background: linear-gradient(135deg, #bae6fd, #ecf5fa, #6294f1); 
+            box-shadow: inset 0 0 8px rgba(99, 102, 241, 0.4);
+        }
+        .t-style-星 .c-level-text { color: #ed7d31; font-size: 11px; font-weight: bold;}
 
-        .bg-style-星空 { 
-            background: linear-gradient(135deg, rgba(204,246,255,0.7) 0%, rgba(227,213,255,0.7) 40%, rgba(255,203,228,0.7) 70%, rgba(255,233,197,0.7) 100%) !important; 
-            box-shadow: inset 0 0 4px rgba(99, 102, 241, 0.4);
+        /* ============================================================ */
+        /* 9. 自訂清除快選單 modal 彈出視窗                               */
+        /* ============================================================ */
+        .c-modal-overlay {
+            position       : fixed;
+            top            : 0; left: 0; right: 0; bottom: 0;
+            background     : rgba(0, 0, 0, 0.4);
+            display        : flex;
+            justify-content: center;
+            align-items    : center;
+            z-index        : 3000;
+            opacity        : 0;
+            visibility     : hidden;
+            transition     : all 0.2s ease;
         }
-        .t-style-星空 .crop-text { color: #0f172a !important; text-shadow: 0px 0px 1px white; }
-        .t-style-星空 .level-text { color: #1e3a8a !important; font-weight: 900 !important; font-size: 11px; text-shadow: 1px 1px 1px rgba(255,255,255,0.9); }
+        .c-modal-overlay.c-modal-open {
+            opacity   : 1;
+            visibility: visible;
+        }
+        .c-modal-box {
+            background    : #ffffff;
+            width         : 320px;
+            border-radius : 12px;
+            padding       : 20px;
+            box-shadow    : 0 10px 25px rgba(0, 0, 0, 0.15);
+            display       : flex;
+            flex-direction: column;
+            gap           : 15px;
+        }
+        .c-modal-title {
+            font-size     : 16px;
+            font-weight   : bold;
+            color         : #1e3a8a;
+            text-align    : center;
+            border-bottom : 1px solid #e2e8f0;
+            padding-bottom: 10px;
+        }
+        .c-modal-options {
+            display       : flex;
+            flex-direction: column;
+            gap           : 10px;
+        }
+        .c-modal-option-label {
+            display      : flex;
+            align-items  : center;
+            gap          : 8px;
+            padding      : 8px 12px;
+            border       : 1px solid #cbd5e1;
+            border-radius: 8px;
+            cursor       : pointer;
+            font-size    : 14px;
+            transition   : all 0.15s;
+        }
+        .c-modal-option-label:hover { background-color: #f1f5f9; }
+        .c-modal-option-label input[type="radio"]:checked + span {
+            font-weight: bold;
+            color      : #ef4444;
+        }
+        .c-modal-actions {
+            display        : flex;
+            justify-content: flex-end;
+            gap            : 10px;
+            margin-top     : 5px;
+        }
+        .c-modal-btn {
+            padding      : 6px 16px;
+            border-radius: 6px;
+            font-size    : 13px;
+            cursor       : pointer;
+            border       : none;
+            transition   : all 0.15s;
+        }
+        .c-modal-btn-cancel {
+            background-color: #e2e8f0;
+            color           : #475569;
+        }
+        .c-modal-btn-cancel:hover { background-color: #cbd5e1; }
+        .c-modal-btn-confirm {
+            background-color: #ef4444;
+            color           : white;
+        }
+        .c-modal-btn-confirm:hover { background-color: #dc2626; }
 
-        #saveStatus { font-size: 13px; color: #059669; font-weight: bold; }
-        .grid-summary-box {
-            background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; margin-bottom: 12px;
-            display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px; flex-shrink: 0;
-        }
-        .summary-item { display: flex; flex-direction: column; background: #ffffff; padding: 6px; border-radius: 4px; border: 1px solid #f1f5f9; }
-        .summary-label { color: #64748b; font-weight: 500; }
-        .summary-val { font-size: 14px; font-weight: bold; color: #1e3a8a; margin-top: 2px; }
-        .total-type-row { background: #eff6ff !important; font-weight: bold; color: #1e40af; }
     </style>
 </head>
-<body>
 
-    <div class="header-container" id="headerTopContainer">
-        <h1>蛋仔派對瘋狂農場規劃器 V8.7</h1>
-        <div class="controls">
-            <div class="control-row">
-                <div class="control-group">
-                    <span>選定作物:</span>
-                    <select id="cropSelect"><option value="">🚫 清除/空白</option></select>
-                </div>
-                <div class="control-group">
-                    <span>型態:</span>
-                    <button class="type-btn active" data-type="普">普</button>
-                    <button class="type-btn" data-type="幻" style="color:#2563eb;">幻</button>
-                    <button class="type-btn" data-type="異" style="color:#ea580c;">異</button>
-                    <button class="type-btn" data-type="巨" style="color:#ef4444;">巨</button>
-                    <button class="type-btn" data-type="流" style="color:#a855f7;">流</button>
-                    <button class="type-btn" data-type="星" style="color:#1e3a8a; background: linear-gradient(135deg, #e0f2fe, #f3e8ff);">星</button>
-                    <button class="type-btn" data-type="🗙清" style="color:#64748b; margin-left: 5px;">🧼 擦除</button>
-                </div>
-                <div class="control-group">
-                    <label for="levelInput">級數:</label>
-                    <input type="number" id="levelInput" min="1" max="9" value="1" style="width: 45px;">
-                </div>
-                <div class="control-group">
-                    <label class="freeze-label">
-                        <input type="checkbox" id="freezeHeaderChk"> 📌 凍結上方控制台
-                    </label>
-                </div>
+<body>
+    <h1>蛋仔派對瘋狂農場規劃器 V11 (by 疾熾烽)</h1>
+    
+    <!-- 自訂清除選項 Modal 快選單 -->
+    <div class="c-modal-overlay" id="js-clearModal">
+        <div class="c-modal-box">
+            <div class="c-modal-title">🧹 請選擇要清除的項目</div>
+            <div class="c-modal-options">
+                <label class="c-modal-option-label">
+                    <input type="radio" name="clearOption" value="bag">
+                    <span>清除背包庫存</span>
+                </label>
+                <label class="c-modal-option-label">
+                    <input type="radio" name="clearOption" value="map">
+                    <span>清除田間作物</span>
+                </label>
+                <label class="c-modal-option-label">
+                    <input type="radio" name="clearOption" value="all" checked>
+                    <span>全部清除 (背包 + 作物)</span>
+                </label>
             </div>
-            
-            <div class="quick-crop-panel" id="quickCropPanel"></div>
-            
-            <div class="control-row" style="border-top: 1px dashed #e2e8f0; padding-top: 6px;">
-                <button class="btn btn-success" id="dragModeBtn" style="background-color: #10b981;">連續塗鴉: 開啟 ✔</button>
-                <button class="btn btn-move-inactive" id="moveModeBtn">🔄 移動模式: 關閉</button>
-                <button class="btn btn-success" id="saveBtn">💾 保存</button>
-                <button class="btn btn-secondary" id="exportBtn">📤 備份</button>
-                <button class="btn btn-secondary" id="importBtn">📥 還原</button>
-                <button class="btn btn-danger" id="clearAllBtn">🧹 全清</button>
-                <span id="saveStatus">● 系統防丟護航中</span>
+            <div class="c-modal-actions">
+                <button class="c-modal-btn c-modal-btn-cancel" id="js-clearModalCancel"  >取消</button>
+                <button class="c-modal-btn c-modal-btn-confirm" id="js-clearModalConfirm">確定</button>
             </div>
         </div>
     </div>
-	<div class="main-layout">
-        <div class="sidebar-left">
-            <div class="panel-content-card">
-                <div class="panel-title">🎒 種子背包庫存 (點選名稱選取)</div>
-                <div class="table-scroll-container">
-                    <table class="inventory-table">
-                        <thead><tr><th>作物</th><th>普</th><th>幻</th><th>異</th><th>巨</th><th>流</th><th>星</th></tr></thead>
-                        <tbody id="inventoryBody"></tbody>
+
+    <div class="c-header-container" id="js-headerTopContainer">
+        <div class="c-controls">
+            <div class="c-control-row">
+                <div class="c-control-group">
+                    <span>選擇作物：</span>
+                    <select id="js-cropSelect"></select>
+                </div>
+
+                <div class="c-control-group">
+                    <span>選擇型態：</span>
+                    <button class="c-type-btn js-type-btn c-active" data-type="普">普</button>
+                    <button class="c-type-btn js-type-btn" data-type="異">異</button>
+                    <button class="c-type-btn js-type-btn" data-type="幻">幻</button>
+                    <button class="c-type-btn js-type-btn" data-type="巨">巨</button>
+                    <button class="c-type-btn js-type-btn" data-type="晶">晶</button>
+                    <button class="c-type-btn js-type-btn" data-type="流">流</button>
+                    <button class="c-type-btn js-type-btn" data-type="星">星</button>
+                    <button class="c-type-btn js-type-btn" data-type="清">🧼 擦除</button>
+                </div>
+
+                <div class="c-control-group">
+                    <label for="js-levelInput">果實數量：</label>
+                    <input type="number" id="js-levelInput" min="1" max="9" value="1" style="width: 45px;">
+                </div>
+
+                <div class="c-control-group">
+                    <label class="c-freeze-label">
+                        <input type="checkbox" id="js-freezeHeaderChk"> 📌 凍結上方控制台
+                    </label>
+                </div>
+
+            </div>
+            
+            <div class="c-quick-crop-panel" id="js-quickCropPanel"></div>
+            
+            <div class="c-control-row action-row">
+                <button id="js-dragModeBtn" class="c-btn c-btn-paint"        >連續塗鴉：關閉</button>                
+                <button id="js-moveModeBtn" class="c-btn c-btn-move-inactive">🔄 移動模式：關閉</button>                
+                <button id="js-copyModeBtn" class="c-btn c-btn-copy-inactive">📋 複製模式：關閉</button>
+                
+                <button id="js-saveBtn"     class="c-btn c-btn-save"   >💾 保存</button>                
+                <button id="js-exportBtn"   class="c-btn c-btn-backup" >📤 備份</button>                
+                <button id="js-importBtn"   class="c-btn c-btn-restore">📥 還原</button>
+                <input type="file" id="js-fileInput" class="c-hidden-file-input" accept=".txt"> 
+
+                <button id="js-clearAllBtn" class="c-btn c-btn-clear-all">🧹 全部清除</button>                
+                <span id="js-saveStatus"    class="c-status-tag"       >● 系統防丟護航中</span>
+            </div>
+        </div>
+    </div>
+
+	<div class="c-main-layout">
+        <div class="c-sidebar-left">
+            <div class="c-panel-content-card">
+                <div class="c-panel-title">🎒 背包種子庫存 (可點選名稱快選)</div>
+
+                <div class="c-bag-summary-box">
+                    <div class="c-summary-item">
+                        <span class="c-summary-label"                     >普通種子總計</span>
+                        <span class="c-summary-val" id="js-bag-sum-normal">0 顆</span>
+                    </div>
+                    <div class="c-summary-item">
+                        <span class="c-summary-label"                 >異型種子總計</span>
+                        <span class="c-summary-val" id="js-bag-sum-yi">0 顆</span>
+                    </div>
+                    <div class="c-summary-item">
+                        <span class="c-summary-label"                   >幻型種子總計</span>
+                        <span class="c-summary-val" id="js-bag-sum-huan">0 顆</span>
+                    </div>
+                    <div class="c-summary-item" style="border-color:#bbf7d0; background:#f0fdf4;">
+                        <span class="c-summary-label"                     style="color:#16a34a;">所有種子加總</span>
+                        <span class="c-summary-val" id="js-bag-sum-total" style="color:#16a34a;">0 顆</span>
+                    </div>
+                </div>
+
+                <div class="c-table-scroll-container">
+                    <table class="c-inventory-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 22%;">作物</th>
+                                <th style="width: 13%;">重量</th>
+                                <th style="width: 13%;">價格</th>
+                                <th style="width: 13%;">普</th>
+                                <th style="width: 13%;">異</th>
+                                <th style="width: 13%;">幻</th>
+                                <th style="width: 13%;">總</th>
+                            </tr>
+                        </thead>
+                        <tbody id="js-inventoryBody"></tbody>
                     </table>
                 </div>
             </div>
         </div>
 
-        <div class="map-wrapper">
-            <div class="map-container" id="mapMain">
-                <script>
-                    for(let z=1; z<=8; z++) {
-                        document.write(`
-                        <div class="zone" id="z${z}" data-zone-id="${z}">
-                            <div class="zone-title">第 ${z} 區域</div>
-                            <div class="grid-10x10" data-zone="${z}">`);
-                        
-                        for (let row = 9; row >= 0; row--) {
-                            for (let col = 0; col <= 9; col++) {
-                                if ((row === 0 || row === 9) && (col === 0 || col === 9)) {
-                                    document.write(`<div class="axis-label axis-empty"></div>`);
-                                } 
-                                else if (row === 0 || row === 9) {
-                                    let displayCol = (z % 2 === 0) ? (9 - col) : col;
-                                    document.write(`<div class="axis-label" data-type="col" data-val="${displayCol}">${displayCol}</div>`);
-                                } 
-                                else if (col === 0 || col === 9) {
-                                    document.write(`<div class="axis-label" data-type="row" data-val="${row}">${row}</div>`);
-                                } 
-                                else {
-                                    let finalCol = (z % 2 === 0) ? (9 - col) : col;
-                                    document.write(`<div class="cell" data-zone="${z}" data-row="${row}" data-col="${finalCol}"></div>`);
-                                }
-                            }
-                        }
-                        
-                        document.write(`
-                            </div>
-                        </div>`);
-                    }
-                </script>
-            </div>
+        <div class="c-map-wrapper">
+            <div class="c-map-container" id="js-mapMain"></div>
         </div>
 
-        <div class="sidebar-right">
-            <div class="panel-content-card">
-                <div class="panel-title">📊 田間即時栽種統計</div>
-                <div class="grid-summary-box">
-                    <div class="summary-item"><span class="summary-label">總格數</span><span class="summary-val">512 格</span></div>
-                    <div class="summary-item"><span class="summary-label">已使用格數</span><span class="summary-val" id="statPlantedGrids">0 格</span></div>
-                    <div class="summary-item"><span class="summary-label">剩餘可用格數</span><span class="summary-val" id="statRemainGrids">512 格</span></div>
-                    <div class="summary-item" style="border-color:#bbf7d0; background:#f0fdf4;"><span class="summary-label" style="color:#16a34a;">田間種子總數</span><span class="summary-val" id="statTotalSeeds" style="color:#16a34a;">0 顆</span></div>
+        <div class="c-sidebar-right">
+            <div class="c-panel-content-card">
+                <div class="c-panel-title">📊 田間即時栽種統計</div>
+
+                <div class="c-grid-summary-box">
+                    <div class="c-summary-item">
+                        <span class="c-summary-label">可種格數</span>
+                        <span class="c-summary-val"  >512 格</span>
+                    </div>
+                    <div class="c-summary-item">
+                        <span class="c-summary-label"                    >已用格數</span>
+                        <span class="c-summary-val" id="js-statPlantedGrids">0 格</span>
+                    </div>
+                    <div class="c-summary-item">
+                        <span class="c-summary-label"                   >剩餘格數</span>
+                        <span class="c-summary-val" id="js-statRemainGrids">512 格</span>
+                    </div>
+                    <div class="c-summary-item" style="border-color:#bbf7d0; background:#f0fdf4;">
+                        <span class="c-summary-label" style="color:#16a34a;"                  >作物總數</span>
+                        <span class="c-summary-val" id="js-statTotalSeeds" style="color:#16a34a;">0 顆</span>
+                    </div>
                 </div>
-                <div class="table-scroll-container">
-                    <table class="stats-table">
-                        <thead><tr><th>作物</th><th>普</th><th>幻</th><th>異</th><th>巨</th><th>流</th><th>星</th><th>總</th><th style="color: #e11d48; font-weight: bold;">果</th></tr></thead>
-                        <tbody id="statsBody"></tbody>
+
+                <div class="c-table-scroll-container">
+                    <table class="c-stats-table">
+                        <thead><tr><th>作物</th><th>普</th><th>異</th><th>幻</th><th>巨</th><th>晶</th><th>流</th><th>星</th><th>總</th><th style="color: #e11d48; font-weight: bold;">果</th></tr></thead>
+                        <tbody id="js-statsBody"></tbody>
                     </table>
                 </div>
             </div>
@@ -652,44 +993,66 @@
     </div>
 
     <script>
-        // 修正核心：完全改用您提供的高可讀性 Map/Dictionary 結構
+        // ============================================================
+        // 【區塊一】全作物靜態資料庫與扁平化查詢輔助
+        // ============================================================
+
+        // 全作物靜態資料庫 (名單/稀有度排序)
         const cropsData = {
             '至臻': [
-                { name: '大王菊', short: '大菊' }, { name: '向日葵', short: '葵花' }, { name: '松樹', short: '松樹' },
-                { name: '仙人掌象', short: '掌象' }, { name: '驚奇菇', short: '奇菇' }, { name: '蟠桃', short: '蟠桃' },
-                { name: '葡萄', short: '葡萄' }, { name: '朝天椒', short: '天椒' }, { name: '彼岸花', short: '彼岸' },
-                { name: '幻月花', short: '幻月' }, { name: '火龍狗', short: '龍狗' }, { name: '紅包果', short: '紅包' },
-                { name: '蘆薈', short: '蘆薈' }, { name: '月蟾蜍', short: '月蟾' }, { name: '月兔', short: '月兔' },
-                { name: '月影梅', short: '影梅' }, { name: '星空玫瑰', short: '星玫' }
+                { name: '大王菊　', short: '大王', weight: 10.2, price: " 6.0 m" }, { name: '向日葵　', short: '葵花', weight: 51.0, price: " 3.0 m" },
+                { name: '松樹　　', short: '松樹', weight: 17.0, price: " 4.0 m" }, { name: '仙人掌象', short: '仙象', weight: 34.0, price: "30.0 m" },
+                { name: '驚奇菇　', short: '奇菇', weight: 10.2, price: "25.0 m" }, { name: '蟠桃　　', short: '蟠桃', weight: 20.4, price: "24.0 m" },
+                { name: '葡萄　　', short: '葡萄', weight: 10.2, price: "18.0 m" }, { name: '朝天椒　', short: '天椒', weight: 10.2, price: "25.0 m" }, 
+                { name: '彼岸花　', short: '彼岸', weight: 10.3, price: "20.0 m" }, { name: '幻月花　', short: '幻月', weight: 23.8, price: "10.0 m" }, 
+                { name: '火龍狗　', short: '龍狗', weight: 34.0, price: "28.0 m" }, { name: '紅包果　', short: '紅包', weight:  5.1, price: "8.88 m" },
+                { name: '蘆薈　　', short: '蘆薈', weight: 10.2, price: "27.5 m" }, { name: '月蟾蜍　', short: '月蟾', weight: 34.0, price: "25.0 m" }, 
+                { name: '月兔　　', short: '月兔', weight: 23.8, price: "13.5 m" }, { name: '月影梅　', short: '梅樹', weight:  3.4, price: " 6.0 m" }, 
+                { name: '星空玫瑰', short: '星玫', weight: 10.2, price: "11.2 m" }, { name: '馬蹄蓮　', short: '蹄蓮', weight: 20.4, price: " 5.0 m" },
+                { name: '鈴蘭幽幽', short: '幽幽', weight: 23.8, price: "15.0 m" }, { name: '舞柿黛拉', short: '舞拉', weight: 42.5, price: "28.0 m" }
             ],
-            '黃金': [
-                { name: '草莓', short: '草莓' }, { name: '奇異果', short: '奇異' }, { name: '榴槤', short: '榴槤' },
-                { name: '荔枝', short: '荔枝' }, { name: '月核樹', short: '核樹' }, { name: '液光藤', short: '光藤' },
-                { name: '柚子', short: '柚子' }, { name: '菠菜', short: '菠菜' }
+            '橙色': [
+                { name: '草莓　　', short: '草莓', weight:  9.0, price: "1.25 m" }, { name: '奇異果　', short: '奇異', weight: 14.5, price: " 600 k" },
+                { name: '榴槤　　', short: '榴槤', weight: 63.5, price: "1.75 m" }, { name: '荔枝　　', short: '荔枝', weight: 24.5, price: " 2.0 m" }, 
+                { name: '月核樹　', short: '核樹', weight: 17.2, price: " 2.0 m" }, { name: '液光藤　', short: '光藤', weight: 20.5, price: " 3.1 m" },
+                { name: '柚子　　', short: '柚子', weight: 61.2, price: " 1.9 m" }, { name: '菠菜　　', short: '菠菜', weight: 20.4, price: " 3.5 m" },
+                { name: '歌柿黛拉', short: '歌拉', weight:  0.0, price: " 0.0 m" }
             ],
             '紫色': [
-                { name: '香蕉', short: '香蕉' }, { name: '蘋果', short: '蘋果' }, { name: '石榴', short: '石榴' },
-                { name: '椰子', short: '椰子' }, { name: '南瓜', short: '南瓜' }, { name: '櫻桃', short: '櫻桃' },
-                { name: '龍眼', short: '龍眼' }, { name: '柿子', short: '柿子' }, { name: '星葉菜', short: '星葉' },
-                { name: '月莓', short: '月莓' }
+                { name: '香蕉　　', short: '香蕉', weight: 10.5, price: " 300 k" }, { name: '蘋果　　', short: '蘋果', weight: 40.0, price: " 150 k" }, 
+                { name: '石榴　　', short: '石榴', weight: 21.5, price: " 250 k" }, { name: '椰子　　', short: '椰子', weight: 42.0, price: " 500 k" }, 
+                { name: '南瓜　　', short: '南瓜', weight:220.0, price: " 150 k" }, { name: '櫻桃　　', short: '櫻桃', weight: 10.5, price: " 400 k" },
+                { name: '龍眼　　', short: '龍眼', weight:  8.5, price: " 350 k" }, { name: '柿子　　', short: '柿子', weight: 37.6, price: " 180 k" }, 
+                { name: '星葉菜　', short: '星葉', weight: 10.2, price: " 500 k" }, { name: '月莓　　', short: '月莓', weight:  8.5, price: " 300 k" }
             ],
             '藍色': [
-                { name: '玉米', short: '玉米' }, { name: '西瓜', short: '西瓜' }, { name: '牽牛花', short: '牽牛' },
-                { name: '梨作物', short: '水梨' }, { name: '橘子', short: '橘子' }, { name: '棉花', short: '棉花' },
-                { name: '白菜', short: '白菜' }, { name: '月環果', short: '月環' }, { name: '銀輝苔', short: '銀苔' },
-                { name: '花生', short: '花生' }, { name: '藍莓', short: '藍莓' }
+                { name: '玉米　　', short: '玉米', weight: 42.0, price: "  90 k" }, { name: '西瓜　　', short: '西瓜', weight:170.0, price: "  60 k" }, 
+                { name: '牽牛花　', short: '牽牛', weight:  5.5, price: " 120 k" }, { name: '梨作物　', short: '梨樹', weight: 14.5, price: " 120 k" }, 
+                { name: '橘子　　', short: '橘子', weight: 14.5, price: " 100 k" }, { name: '棉花　　', short: '棉花', weight:  5.5, price: " 120 k" }, 
+                { name: '白菜　　', short: '白菜', weight: 10.0, price: "  60 k" }, { name: '月環樹　', short: '月環', weight: 20.5, price: "  60 k" }, 
+                { name: '銀輝苔　', short: '銀苔', weight:  5.2, price: " 120 k" }, { name: '花生　　', short: '花生', weight:  5.1, price: " 150 k" }, 
+                { name: '藍莓　　', short: '藍莓', weight: 40.8, price: " 100 k" }
             ],
             '綠色': [
-                { name: '黃瓜', short: '黃瓜' }, { name: '竹子', short: '竹子' }, { name: '大豆', short: '大豆' },
-                { name: '月燈草', short: '月燈' }, { name: '月番茄', short: '月茄' }
+                { name: '黃瓜　　', short: '黃瓜', weight: 14.5, price: "   9 k" }, { name: '竹子　　', short: '竹子', weight:140.0, price: "  30 k" }, 
+                { name: '大豆　　', short: '大豆', weight:  3.5, price: "  40 k" }, { name: '月燈草　', short: '月燈', weight:  5.2, price: "   8 k" }, 
+                { name: '月番茄　', short: '月番', weight: 10.2, price: "  16 k" }
             ],
             '灰色': [
-                { name: '波斯角', short: '波斯' }, { name: '番茄', short: '番茄' }, { name: '馬鈴薯', short: '洋芋' },
-                { name: '香菇', short: '香菇' }, { name: '月光草', short: '月光' }, { name: '灰壤豆', short: '灰豆' }
+                { name: '波斯角　', short: '波斯', weight: 34.5, price: " 200  " }, { name: '番茄　　', short: '番茄', weight: 11.0, price: " 100  " }, 
+                { name: '馬鈴薯　', short: '鈴薯', weight: 12.0, price: "   0  " }, { name: '香菇　　', short: '香菇', weight:  3.5, price: "   5 k" }, 
+                { name: '月光草　', short: '月光', weight:  3.5, price: "   0  " }, { name: '灰壤豆　', short: '灰豆', weight:  3.4, price: "   1 k" }
             ]
         };
 
-        // 扁平化輔助函式，以便舊邏輯查詢個別作物屬性
+        // 為所有作物設定獨立的重量變數
+        for (const cat in cropsData) {
+            cropsData[cat].forEach(c => {
+                window[`weight_${c.short}`] = c.weight;
+            });
+        }
+
+        // 扁平化查詢作物屬性工具
         function findCropByShort(shortName) {
             for (const cat in cropsData) {
                 const found = cropsData[cat].find(c => c.short === shortName);
@@ -698,390 +1061,957 @@
             return null;
         }
 
+        // ============================================================
+        // 【區塊二】全域操作狀態機變數定義
+        // ============================================================
+        
+        // 全局操作狀態機
         let isDragMode = true, isMouseDown = false, currentStyle = '普';
-        let moveModeState = 'off', moveSourceCell = null;
-        const STORAGE_KEY = 'eggy_farm_planner_v5_save';
+        let moveModeState = 'off'; // off, pick_src, pick_dst
+        let moveSourceCell = null;
+        let copyModeState = 'off';
+        let copySourceCell = null;
+        let zoneMoveSource = null;
+        const STORAGE_KEY = 'crazy-farm_V10_save';
 
-        function initUI() {
-            const cropSelect = document.getElementById('cropSelect');
-            const quickPanel = document.getElementById('quickCropPanel');
-            quickPanel.innerHTML = ''; 
+        // ============================================================
+        // 【區塊三】網頁介面動態初始化與基本事件綁定 (含快捷按鈕動態排版)
+        // ============================================================
 
-            const categories = ['至臻', '黃金', '紫色', '藍色', '綠色', '灰色'];
-            
-            categories.forEach(cat => {
-                const groupOpt = document.createElement('optgroup'); 
-                groupOpt.label = cat; 
-                cropSelect.appendChild(groupOpt);
+        // 定義稀有度系列與預設值
+        const CROP_CATEGORIES = ['至臻', '橙色', '紫色', '藍色', '綠色', '灰色'];
 
-                if (cat === '藍色') {
-                    const br = document.createElement('div');
-                    br.className = 'flex-break';
-                    quickPanel.appendChild(br);
+        // 取得或初始化「快捷鈕顯示」與「斷行」的設定狀態
+        function getQuickBtnSettings() {
+            const defaultSettings = {
+                show: { '至臻': true, '橙色': true, '紫色': true, '藍色': true, '綠色': true, '灰色': true },
+                breakAfter: { '至臻': true, '橙色': false, '紫色': false, '藍色': true, '綠色': false, '灰色': false }
+            };
+
+            const saved = localStorage.getItem('crazy-farm_quick_btn_settings');
+            if (saved) {
+                try { return JSON.parse(saved); } catch(e) {}
+            }
+            return defaultSettings;
+        }
+
+        // 儲存設定至 localStorage
+        function saveQuickBtnSettings(settings) {
+            localStorage.setItem('crazy-farm_quick_btn_settings', JSON.stringify(settings));
+        }
+
+        // 1. 生成 8 區地圖 DOM
+        function renderMapDOM() {
+            const mapMain = document.getElementById('js-mapMain');
+            mapMain.innerHTML = '';
+            const zoneOrder = [7, 8, 5, 6, 3, 4, 1, 2];
+
+            zoneOrder.forEach(z => {
+                const zoneDiv = document.createElement('div');
+                zoneDiv.className = 'c-zone';
+                zoneDiv.id = `js-z${z}`;
+                zoneDiv.dataset.zoneId = z;
+
+                let gridHtml = `<div class="c-zone-title">第 ${z} 塊田</div><div class="c-grid-10x10" data-zone="${z}">`;
+                for (let row = 9; row >= 0; row--) {
+                    for (let col = 0; col <= 9; col++) {
+                        if ((row === 0 || row === 9) && (col === 0 || col === 9)) {
+                            gridHtml += `<div class="c-axis-label c-axis-empty"></div>`;
+                        } else if (row === 0 || row === 9) {
+                            let displayCol = (z % 2 === 0) ? (9 - col) : col;
+                            gridHtml += `<div class="c-axis-label" data-type="col" data-val="${displayCol}">${displayCol}</div>`;
+                        } else if (col === 0 || col === 9) {
+                            gridHtml += `<div class="c-axis-label" data-type="row" data-val="${row}">${row}</div>`;
+                        } else {
+                            let finalCol = (z % 2 === 0) ? (9 - col) : col;
+                            gridHtml += `<div class="c-cell js-cell" data-zone="${z}" data-row="${row}" data-col="${finalCol}"></div>`;
+                        }
+                    }
                 }
+                gridHtml += `</div>`;
+                zoneDiv.innerHTML = gridHtml;
+
+                mapMain.appendChild(zoneDiv);
+            });
+        }
+
+        // 2. 根據勾選設定動態生成「下拉選單」與「快捷按鈕 DOM」
+        function renderCropOptionsDOM() {
+            const cropSelect = document.getElementById('js-cropSelect');
+            const quickPanel = document.getElementById('js-quickCropPanel');
+            const currentSelectedVal = cropSelect.value; // 保留當前選取的作物
+            
+            cropSelect.innerHTML = '';
+            quickPanel.innerHTML = '';
+
+            const settings = getQuickBtnSettings();
+
+            CROP_CATEGORIES.forEach(cat => {
+                // 下拉選單（一律全部載入）
+                const group = document.createElement('optgroup');
+                group.label = `${cat}系列`;
 
                 cropsData[cat].forEach(c => {
-                    const opt = document.createElement('option'); 
-                    opt.value = c.short; 
-                    opt.textContent = `${c.name}`;
-                    groupOpt.appendChild(opt);
-
-                    const qBtn = document.createElement('button');
-                    qBtn.className = `quick-crop-btn q-btn-${cat}`;
-                    qBtn.textContent = c.short;
-                    qBtn.title = `${c.name} (${cat}系列)`;
-                    qBtn.dataset.short = c.short;
-
-                    qBtn.addEventListener('click', () => selectCrop(c.short));
-                    quickPanel.appendChild(qBtn);
+                    const opt = document.createElement('option');
+                    opt.value = c.short;
+                    opt.textContent = `${c.name} (${c.short})`;
+                    group.appendChild(opt);
                 });
-            });
+                cropSelect.appendChild(group);
 
-            const freezeChk = document.getElementById('freezeHeaderChk');
-            const topContainer = document.getElementById('headerTopContainer');
-            
-            let cachedFreeze = localStorage.getItem('eggy_farm_freeze_pref2');
-            if (cachedFreeze === null) cachedFreeze = true; 
-            else cachedFreeze = (cachedFreeze === 'true');
-            
-            freezeChk.checked = cachedFreeze;
-            if(cachedFreeze) topContainer.classList.add('frozen');
+                // 快捷按鈕區塊
+                if (settings.show[cat]) {
+                    cropsData[cat].forEach(c => {
+                        const qBtn = document.createElement('button');
+                        qBtn.type = 'button';
+                        qBtn.className = `c-quick-crop-btn c-q-btn-${cat} js-quick-crop-btn`;
+                        qBtn.dataset.short = c.short;
+                        qBtn.textContent = c.short;
+                        quickPanel.appendChild(qBtn);
+                    });
+                }
 
-            freezeChk.addEventListener('change', () => {
-                if(freezeChk.checked) {
-                    topContainer.classList.add('frozen');
-                    localStorage.setItem('eggy_farm_freeze_pref2', 'true');
-                } else {
-                    topContainer.classList.remove('frozen');
-                    localStorage.setItem('eggy_farm_freeze_pref2', 'false');
+                // 若該系列設定了「斷行」，則在此系列後方加入換行標籤
+                if (settings.breakAfter[cat]) {
+                    const breakDiv = document.createElement('div');
+                    breakDiv.className = 'c-flex-break';
+                    quickPanel.appendChild(breakDiv);
                 }
             });
 
-            const invBody = document.getElementById('inventoryBody');
-            invBody.innerHTML = ""; 
+            // 還原或預設選取狀態
+            const targetVal = currentSelectedVal || cropsData['至臻'][0].short;
+            cropSelect.value = targetVal;
+            
+            // 高亮對應的快捷按鈕（若該按鈕目前有顯示）
+            const activeBtn = quickPanel.querySelector(`[data-short="${targetVal}"]`);
+            if (activeBtn) activeBtn.classList.add('c-active');
+        }
 
+        // 3. 生成背包表格 DOM（含「快捷鈕」與「斷行」勾選控制）
+        function renderInventoryDOM() {
+            const invBody = document.getElementById('js-inventoryBody');
+            invBody.innerHTML = "";
+            const settings = getQuickBtnSettings();
+
+            // 全場總計列
             const globalSumTr = document.createElement('tr');
-            globalSumTr.className = 'global-inv-sum-row';
+            globalSumTr.className = 'c-global-inv-sum-row';
             globalSumTr.innerHTML = `
-                <td style="text-align:left; padding-left:4px;">全部庫存總計</td>
-                <td id="inv-global-普">0</td><td id="inv-global-幻">0</td><td id="inv-global-異">0</td>
-                <td id="inv-global-巨">0</td><td id="inv-global-流">0</td><td id="inv-global-星">0</td>
+                <td colspan="3" class="c-text-indent-sm">全部庫存總計</td>
+                <td id="js-inv-global-普">0</td>
+                <td id="js-inv-global-異">0</td>
+                <td id="js-inv-global-幻">0</td>
+                <td id="js-inv-global-總">0</td>
             `;
             invBody.appendChild(globalSumTr);
 
-            categories.forEach(cat => {
-                const catTr = document.createElement('tr'); 
-                catTr.innerHTML = `<td colspan="7" class="cat-row">★ ${cat}系列</td>`; 
+            // 稀有度分類列
+            CROP_CATEGORIES.forEach(cat => {
+                const catTr = document.createElement('tr');
+                const isShowChecked = settings.show[cat] ? 'checked' : '';
+                const isBreakChecked = settings.breakAfter[cat] ? 'checked' : '';
+
+                catTr.innerHTML = `
+                    <td colspan="7" class="c-cat-row">
+                        <div class="c-cat-header-flex">
+                            <span>★ ${cat}系列</span>
+                            <span class="c-cat-opts">
+                                <label class="c-cat-opt-label">
+                                    <input type="checkbox" class="js-cat-show-chk" data-cat="${cat}" ${isShowChecked}> 快捷鈕
+                                </label>
+                                <label class="c-cat-opt-label">
+                                    <input type="checkbox" class="js-cat-break-chk" data-cat="${cat}" ${isBreakChecked}> 斷行
+                                </label>
+                            </span>
+                        </div>
+                    </td>
+                `;
                 invBody.appendChild(catTr);
-                
-                const sumTr = document.createElement('tr'); 
-                sumTr.classList.add('cat-sum-row');
-                sumTr.id = `inv-sum-${cat}`;
+
+                // 系列加總列
+                const sumTr = document.createElement('tr');
+                sumTr.classList.add('c-cat-sum-row');
+                sumTr.id = `js-inv-sum-${cat}`;
                 sumTr.innerHTML = `
-                    <td style="text-align:left; padding-left:4px;">系列加總</td>
-                    <td id="inv-sum-${cat}-普">0</td><td id="inv-sum-${cat}-幻">0</td><td id="inv-sum-${cat}-異">0</td>
-                    <td id="inv-sum-${cat}-巨">0</td><td id="inv-sum-${cat}-流">0</td><td id="inv-sum-${cat}-星">0</td>
+                    <td colspan="3" class="c-text-indent-lg">系列加總</td>
+                    <td id="js-inv-sum-${cat}-普">0</td>
+                    <td id="js-inv-sum-${cat}-異">0</td>
+                    <td id="js-inv-sum-${cat}-幻">0</td>
+                    <td id="js-inv-sum-${cat}-總">0</td>
                 `;
                 invBody.appendChild(sumTr);
 
+                // 各作物列
                 cropsData[cat].forEach(c => {
+                    const wVal = window[`weight_${c.short}`];
+                    const formattedWeight = typeof wVal === 'number' ? wVal.toFixed(1) : "0.0";
+                    const displayPrice = c.price;
+
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td style="text-align:left; padding-left:4px;" class="t-${cat} clickable-crop" data-short="${c.short}">${c.name}</td>
-                        <td><input type="number" class="inv-input" data-short="${c.short}" data-cat="${cat}" data-mode="普" min="0" placeholder="-"></td>
-                        <td><input type="number" class="inv-input" data-short="${c.short}" data-cat="${cat}" data-mode="幻" min="0" placeholder="-"></td>
-                        <td><input type="number" class="inv-input" data-short="${c.short}" data-cat="${cat}" data-mode="異" min="0" placeholder="-"></td>
-                        <td><input type="number" class="inv-input" data-short="${c.short}" data-cat="${cat}" data-mode="巨" min="0" placeholder="-"></td>
-                        <td><input type="number" class="inv-input" data-short="${c.short}" data-cat="${cat}" data-mode="流" min="0" placeholder="-"></td>
-                        <td><input type="number" class="inv-input" data-short="${c.short}" data-cat="${cat}" data-mode="星" min="0" placeholder="-"></td>
+                        <td class="t-${cat} c-clickable-crop c-text-indent-sm" data-short="${c.short}">${c.name}</td>
+                        <td><input type="text" class="c-inv-static-input" value="${formattedWeight}" readonly tabindex="-1" data-weight-val="${formattedWeight}"></td>
+                        <td><input type="text" class="c-inv-static-input" value="${displayPrice}" readonly tabindex="-1"></td>
+                        <td><input type="number" class="c-inv-input js-inv-input" data-short="${c.short}" data-cat="${cat}" data-mode="普" min="0" max="99999" placeholder="-"></td>
+                        <td><input type="number" class="c-inv-input js-inv-input" data-short="${c.short}" data-cat="${cat}" data-mode="異" min="0" max="99999" placeholder="-"></td>
+                        <td><input type="number" class="c-inv-input js-inv-input" data-short="${c.short}" data-cat="${cat}" data-mode="幻" min="0" max="99999" placeholder="-"></td>
+                        <td id="js-total-${c.short}" class="c-inv-total-display">-</td>
                     `;
                     invBody.appendChild(tr);
                 });
             });
-
-            document.querySelectorAll('.clickable-crop').forEach(element => {
-                element.addEventListener('click', () => selectCrop(element.getAttribute('data-short')));
-            });
-
-            invBody.addEventListener('input', () => {
-                calculateInvTotals(); autoSaveData();
-            });
-
-            cropSelect.addEventListener('change', () => syncQuickCropButtons(cropSelect.value));
         }
 
+        // 4. 綁定所有控制按鈕與地圖事件
+        function bindGlobalEvents() {
+            const cropSelect = document.getElementById('js-cropSelect');
+            const quickPanel = document.getElementById('js-quickCropPanel');
+            const invBody = document.getElementById('js-inventoryBody');
+
+            // 區標題點擊 (全區移動模式)
+            document.querySelectorAll('.c-zone-title').forEach(titleEl => {
+                const zoneId = titleEl.closest('.c-zone').dataset.zoneId;
+                titleEl.addEventListener('click', () => handleZoneTitleClick(zoneId));
+            });
+
+            // 下拉選單同步快捷按鈕高亮
+            cropSelect.addEventListener('change', (e) => {
+                const val = e.target.value;
+                document.querySelectorAll('.js-quick-crop-btn').forEach(btn => {
+                    btn.classList.toggle('c-active', btn.dataset.short === val);
+                });
+            });
+
+            // 快捷按鈕點擊同步下拉選單
+            quickPanel.addEventListener('click', (e) => {
+                const btn = e.target.closest('.js-quick-crop-btn');
+                if (!btn) return;
+                const short = btn.dataset.short;
+                cropSelect.value = short;
+                document.querySelectorAll('.js-quick-crop-btn').forEach(b => b.classList.remove('c-active'));
+                btn.classList.add('c-active');
+            });
+
+            // 背包：快捷鈕 / 斷行 勾選切換事件監聽
+            invBody.addEventListener('change', (e) => {
+                const showChk = e.target.closest('.js-cat-show-chk');
+                const breakChk = e.target.closest('.js-cat-break-chk');
+
+                if (showChk || breakChk) {
+                    const settings = getQuickBtnSettings();
+                    if (showChk) {
+                        const cat = showChk.dataset.cat;
+                        settings.show[cat] = showChk.checked;
+                    }
+                    if (breakChk) {
+                        const cat = breakChk.dataset.cat;
+                        settings.breakAfter[cat] = breakChk.checked;
+                    }
+                    saveQuickBtnSettings(settings);
+                    renderCropOptionsDOM(); // 重新生成快捷列
+                }
+            });
+
+            // 背包輸入框自動計算
+            document.querySelectorAll('.js-inv-input').forEach(input => {
+                input.addEventListener('input', calculateInvTotals);
+            });
+
+            // 背包作物名稱點擊地圖發光高亮
+            document.querySelectorAll('.c-clickable-crop').forEach(cropTd => {
+                cropTd.addEventListener('mouseenter', (e) => highlightCropsOnMap(e.target.dataset.short));
+                cropTd.addEventListener('mouseleave', clearMapCropHighlight);
+            });
+
+            // 型態選擇按鈕
+            const typeBtns = document.querySelectorAll('.js-type-btn');
+            typeBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    typeBtns.forEach(b => b.classList.remove('c-active'));
+                    btn.classList.add('c-active');
+                    currentStyle = btn.dataset.type;
+                });
+            });
+
+            // 地圖 10x10 單元格事件代理
+            document.querySelectorAll('.c-grid-10x10').forEach(grid => {
+                grid.addEventListener('mousedown', (e) => {
+                    const cell = e.target.closest('.js-cell');
+                    if (cell) {
+                        isMouseDown = true;
+                        handleCellClick(cell);
+                    }
+                });
+
+                grid.addEventListener('mouseenter', (e) => {
+                    const cell = e.target.closest('.js-cell');
+                    if (cell) {
+                        const { zone, row, col } = cell.dataset;
+                        highlightAxes(zone, row, col, true);
+                        if (cell.dataset.crop) highlightRowInStats(cell.dataset.crop);
+                        if (isMouseDown) handleCellClick(cell);
+                    }
+                }, true);
+
+                grid.addEventListener('mouseleave', (e) => {
+                    const cell = e.target.closest('.js-cell');
+                    if (cell) {
+                        const { zone, row, col } = cell.dataset;
+                        highlightAxes(zone, row, col, false);
+                        clearStatsHighlight();
+                    }
+                }, true);
+            });
+
+            // 存檔與還原按鈕
+            document.getElementById('js-saveBtn').addEventListener('click', saveData);
+            document.getElementById('js-exportBtn').addEventListener('click', exportData);
+            document.getElementById('js-importBtn').addEventListener('click', () => {
+                document.getElementById('js-fileInput').click();
+            });
+        }
+
+        // 5. 載入凍結等介面偏好
+        function loadPreferences() {
+            const freezeChk = document.getElementById('js-freezeHeaderChk');
+            const headerBox = document.getElementById('js-headerContainer');
+
+            freezeChk.addEventListener('change', (e) => {
+                if (e.target.checked) headerBox.classList.add('c-frozen');
+                else headerBox.classList.remove('c-frozen');
+                localStorage.setItem('crazy-farm_freeze_header', e.target.checked ? '1' : '0');
+            });
+
+            if (localStorage.getItem('crazy-farm_freeze_header') === '1') {
+                freezeChk.checked = true;
+                headerBox.classList.add('c-frozen');
+            }
+        }
+
+        // 主初始化進入點
+        function initUI() {
+            renderMapDOM();          // 1. 生成 8 區地圖
+            renderInventoryDOM();    // 2. 生成背包表格 (必須在 renderCropOptionsDOM 前生成或並行)
+            renderCropOptionsDOM();  // 3. 生成下拉與快捷選單
+            bindGlobalEvents();      // 4. 綁定所有控制按鈕與地圖事件
+            loadPreferences();       // 5. 載入凍結等介面偏好
+        }
+
+        // ============================================================
+        // 【區塊四】作物選擇高亮與連動同步
+        // ============================================================
+
         function selectCrop(shortName) {
-            if(currentStyle === '🗙清') setBrushStyle('普');
-            document.getElementById('cropSelect').value = shortName;
+            if(currentStyle === '清') setBrushStyle('普');
+            document.getElementById('js-cropSelect').value = shortName;
             syncQuickCropButtons(shortName);
         }
 
         function syncQuickCropButtons(activeShort) {
-            document.querySelectorAll('.quick-crop-btn').forEach(btn => {
-                if(btn.dataset.short === activeShort) btn.classList.add('active');
-                else btn.classList.remove('active');
+            document.querySelectorAll('.c-quick-crop-btn').forEach(btn => {
+                if(btn.dataset.short === activeShort) btn.classList.add    ('c-active');
+                else                                  btn.classList.remove ('c-active');
             });
+        }
+
+        // ============================================================
+        // 【區塊五】背包種子庫存數據加總與渲染
+        // ============================================================
+        
+        // 數值格式化輔助函式：大於 0 時顯示千分位，0 或無數值時顯示指定符號（預設為 "-"）
+        function formatNum(val, zeroChar = '-') {
+            const  num = Number(val) || 0;
+            return num > 0 ? num.toLocaleString() : zeroChar;
         }
 
         function calculateInvTotals() {
-            const categories = ['至臻', '黃金', '紫色', '藍色', '綠色', '灰色'];
-            const modes = ['普', '幻', '異', '巨', '流', '星'];
-            let globalTotals = { 普: 0, 幻: 0, 異: 0, 巨: 0, 流: 0, 星: 0 };
+            // 1. 定義六種稀有度系列與三種型態的陣列
+            const categories = ['至臻', '橙色', '紫色', '藍色', '綠色', '灰色'];
+            const modes      = ['普'  , '異'  , '幻'];
+            
+            // 2. 初始化全場跨系列的加總物件
+            const globalSums = { '普': 0, '異': 0, '幻': 0, '總': 0 };
+            
+            // 3. 初始化各稀有度系列的加總物件
+            const catSums = {};
+            categories.forEach(cat => {
+                catSums[cat] = { '普': 0, '異': 0, '幻': 0, '總': 0 };
+            });
+            
+            // 4. 建立暫存單一作物累加總數的物件
+            const cropRowTotals = {};
+            
+            // 5. 抓取所有背包輸入框並進行迭代計算
+            const inputs = document.querySelectorAll('.js-inv-input');
+            inputs.forEach(input => {
+                const short = input.dataset.short;
+                const cat   = input.dataset.cat;
+                const mode  = input.dataset.mode;
+                const val   = parseInt(input.value) || 0;
 
+                // 累加到該系列的型態加總，以及全場的型態加總
+                if (modes.includes(mode)) {
+                    catSums[cat][mode] += val;
+                    globalSums[mode]   += val;
+
+                    // 累加到該作物的單列總計
+                    if (!cropRowTotals[short]) cropRowTotals[short] = 0;
+                    cropRowTotals[short] += val;
+                }
+            });
+            
+            // 6. 將計算出來的「單一作物總數」渲染到表格該列的最後一欄
+            Object.keys(cropRowTotals).forEach(short => {
+                const totalInput = document.getElementById(`js-total-${short}`);
+                if (totalInput) {
+                    const rowTotal = cropRowTotals[short];
+                    totalInput.textContent = formatNum(rowTotal, '-');
+                    
+                    // 尋找該輸入框，獲取其所屬系列，將單列總數累加至該系列的「總」及全場的「總」
+                    const inputEl = document.querySelector(`.js-inv-input[data-short="${short}"]`);
+                    if (inputEl) {
+                        const cat = inputEl.dataset.cat;
+                        catSums[cat]['總'] += rowTotal;
+                    }
+                    globalSums['總'] += rowTotal;
+                }
+            });
+            
+            // 7. 將計算完畢的「各系列加總」寫入 HTML 表格中的對應欄位
             categories.forEach(cat => {
                 modes.forEach(mode => {
-                    let sum = 0;
-                    document.querySelectorAll(`.inv-input[data-cat="${cat}"][data-mode="${mode}"]`).forEach(input => {
-                        sum += parseInt(input.value) || 0;
-                    });
-                    const sumEl = document.getElementById(`inv-sum-${cat}-${mode}`);
-                    if(sumEl) sumEl.textContent = sum;
-                    globalTotals[mode] += sum;
+                    document.getElementById(`js-inv-sum-${cat}-${mode}`).textContent = formatNum(catSums[cat][mode], '-');
                 });
+                document.getElementById(`js-inv-sum-${cat}-總`).textContent = catSums[cat]['總'].toLocaleString();
             });
 
+            // 8. 將「全場總計」寫入全場總計列
             modes.forEach(mode => {
-                const globalSumEl = document.getElementById(`inv-global-${mode}`);
-                if(globalSumEl) globalSumEl.textContent = globalTotals[mode];
+                const globalSumEl = document.getElementById(`js-inv-global-${mode}`);
+                if (globalSumEl) globalSumEl.textContent = globalSums[mode].toLocaleString();
             });
+            const globalTotalEl = document.getElementById('js-inv-global-總');
+            if (globalTotalEl) globalTotalEl.textContent = globalSums['總'].toLocaleString();
+
+            // 【同步更新】背包最上方的四格大數據看板 (大字卡)
+            if (document.getElementById('js-bag-sum-normal')) {
+                document.getElementById('js-bag-sum-normal').textContent = globalSums['普'].toLocaleString() + " 顆";
+                document.getElementById('js-bag-sum-yi'    ).textContent = globalSums['異'].toLocaleString() + " 顆";
+                document.getElementById('js-bag-sum-huan'  ).textContent = globalSums['幻'].toLocaleString() + " 顆";
+                document.getElementById('js-bag-sum-total' ).textContent = globalSums['總'].toLocaleString() + " 顆";
+            }      
         }
 
-        const typeBtns = document.querySelectorAll('.type-btn');
+        // ============================================================
+        // 【區塊六】型態刷子（普/異/幻/巨...）切換控制
+        // ============================================================
+
+        // 1. 抓取 HTML 中所有帶有 .js-type-btn 類別的型態按鈕
+        const typeBtns = document.querySelectorAll('.js-type-btn');
+        
+        // 2. 針對每一個型態按鈕綁定點擊事件
         typeBtns.forEach(btn => {
             btn.addEventListener('click', () => setBrushStyle(btn.dataset.type));
         });
 
+        // 3. 設定刷子型態的核心處理函式
         function setBrushStyle(styleName) {
             typeBtns.forEach(b => {
-                if(b.dataset.type === styleName) b.classList.add('active');
-                else b.classList.remove('active');
+                if(b.dataset.type === styleName) b.classList.add    ('c-active');
+                else                             b.classList.remove ('c-active');
             });
             currentStyle = styleName;
-            if(styleName === '🗙清' && moveModeState !== 'off') exitMoveMode();
+            if(styleName === '清') {
+                if(moveModeState !== 'off') exitMoveMode();
+                if(copyModeState !== 'off') exitCopyMode();
+            }
         }
 
-        const cells = document.querySelectorAll('.cell');
-        cells.forEach(cell => {
-            cell.addEventListener('mousedown', () => { isMouseDown = true; handleCellClick(cell); });
-            cell.addEventListener('mouseenter', () => { 
-                if (isDragMode && isMouseDown && moveModeState === 'off') applyBrush(cell); 
-                if(cell.dataset.crop) highlightRowInStats(cell.dataset.crop);
-                highlightCrossAxes(cell, true); 
-            });
-            cell.addEventListener('mouseleave', () => {
-                clearStatsHighlight();
-                highlightCrossAxes(cell, false); 
-            });
-        });
+        // ============================================================
+        // 【區塊七】地圖耕地（Cell）滑鼠與十字座標高亮事件監聽
+        // ============================================================
 
+        // 1. 處理「十字座標發光」的函式
         function highlightCrossAxes(cell, shouldHighlight) {
+            // 從格子的 dataset 讀取所屬區域 (zone)、列 (row) 與行 (col)
             const zone = cell.dataset.zone;
-            const row = cell.dataset.row;
-            const col = cell.dataset.col;
+            const row  = cell.dataset.row;
+            const col  = cell.dataset.col;
             if(!zone || !row || !col) return;
 
+            // 尋找同分區內對應 Row 與 Col 的座標標籤 HTML 元素
             const targetLabels = document.querySelectorAll(
-                `.zone[data-zone-id="${zone}"] .axis-label[data-type="row"][data-val="${row}"], ` +
-                `.zone[data-zone-id="${zone}"] .axis-label[data-type="col"][data-val="${col}"]`
+                `.c-zone[data-zone-id="${zone}"] .c-axis-label[data-type="row"][data-val="${row}"], ` +
+                `.c-zone[data-zone-id="${zone}"] .c-axis-label[data-type="col"][data-val="${col}"]`
             );
 
+            // 根據 shouldHighlight 布林值，決定加上或移除高亮 Class
             targetLabels.forEach(label => {
-                if(shouldHighlight) label.classList.add('axis-highlighted');
-                else label.classList.remove('axis-highlighted');
+                if(shouldHighlight) label.classList.add    ('c-axis-highlighted');
+                else                label.classList.remove ('c-axis-highlighted');
             });
         }
 
+        // 2. 統計表格動態連動：當滑鼠在格子上時，高亮右側對應作物的資料列
         function highlightRowInStats(cropShort) {
-            clearStatsHighlight();
-            const targetRow = document.getElementById(`stat-row-${cropShort}`);
-            if(targetRow) targetRow.classList.add('highlighted-row');
+            clearStatsHighlight(); // 先清空先前的發光狀態
+            const targetRow = document.getElementById(`js-stat-row-${cropShort}`);
+            if(targetRow) targetRow.classList.add('c-highlighted-row');
         }
 
+        // 清除統計表格高亮樣式的輔助函式
         function clearStatsHighlight() {
-            document.querySelectorAll('.stats-table tr.highlighted-row').forEach(tr => tr.classList.remove('highlighted-row'));
+            document.querySelectorAll('.c-stats-table tr.c-highlighted-row')
+                    .forEach(tr => tr.classList.remove('c-highlighted-row'));
         }
 
+        // 3. 統計表格反向連動：當滑鼠移到右側統計表格時，全地圖同種作物一起發光
         function highlightCropsOnMap(cropShort) {
-            clearMapCropHighlight();
-            document.querySelectorAll(`.cell[data-crop="${cropShort}"]`).forEach(cell => {
-                cell.classList.add('crop-highlight-active');
+            clearMapCropHighlight(); // 先清空先前的發光狀態
+            document.querySelectorAll(`.c-cell[data-crop="${cropShort}"]`).forEach(cell => {
+                cell.classList.add('c-crop-highlight-active');
             });
         }
 
         function clearMapCropHighlight() {
-            document.querySelectorAll('.cell.crop-highlight-active').forEach(cell => cell.classList.remove('crop-highlight-active'));
+            document.querySelectorAll('.c-cell.c-crop-highlight-active')
+                    .forEach(cell => cell.classList.remove('c-crop-highlight-active'));
         }
 
+        // 4. 全局視窗事件：放開滑鼠時重置按壓狀態，避免鼠標移出地圖後鬆開按鈕導致「連續誤刷」
         window.addEventListener('mouseup', () => { isMouseDown = false; });
 
-        function handleCellClick(cell) {
-            if (moveModeState !== 'off') handleMoveLogic(cell);
-            else applyBrush(cell);
+        // ============================================================
+        // 【區塊八】點擊分流器與核心種植塗鴉 `applyBrush()`
+        // ============================================================
+
+        // 重置單一格子狀態的通用輔助函式
+        function resetCell(cell) {
+            // 1. 將格子的 class 重置為基礎的 'c-cell' 樣式，移除所有背景色與特效 class
+            cell.className = 'c-cell';
+            // 2. 清空格子內部的所有 HTML 內容（移除顯示的作物名稱與數量標籤）
+            cell.innerHTML = '';
+            // 3. 刪除格子上記錄作物簡稱的 dataset 屬性
+            delete cell.dataset.crop;
+            // 4. 刪除格子上記錄作物型態（如：普、異、幻）的 dataset 屬性
+            delete cell.dataset.style;
+            // 5. 刪除格子上記錄果實數量的 dataset 屬性
+            delete cell.dataset.lvl;
         }
 
-        function applyBrush(cell) {
-            const cropShort = document.getElementById('cropSelect').value;
-            let level = parseInt(document.getElementById('levelInput').value) || 1;
-
-            if (currentStyle === '🗙清' || !cropShort) {
-                cell.className = 'cell'; cell.innerHTML = '';
-                delete cell.dataset.crop; delete cell.dataset.style; delete cell.dataset.lvl;
+        // 格子點擊事件的分流入口函式：根據當前模式決定執行的動作
+        function handleCellClick(cell) {
+            // 1. 若當前處於「交換/移動模式」
+            if (moveModeState !== 'off') {
+                // 轉由移動邏輯函式處理兩格之間的資料對調
+                handleMoveLogic(cell);
+            // 2. 若當前處於「複製模式」
+            } else if (copyModeState !== 'off') {
+                // 轉由複製邏輯函式擷取該格子的作物與型態設定
+                handleCopyLogic(cell);
+            // 3. 若處於一般模式，則直接執行塗鴉種植或清空動作
             } else {
+                applyBrush(cell);
+            }
+        }
+
+        // 核心種植塗鴉函式：根據當前選取的刷子屬性將作物種植到指定格子上
+        function applyBrush(cell) {
+            // 1. 從作物選單取得當前選擇的作物簡稱
+            const cropShort = document.getElementById('js-cropSelect').value;
+            // 2. 從果實數量輸入框取得數值並轉為整數，若無效或為空則預設為 1
+            let level = parseInt(document.getElementById('js-levelInput').value) || 1;
+            level = Math.min(9, Math.max(1, level));
+
+            // 3. 判斷當前刷子型態是否為「擦除 (清)」或是未選取任何作物
+            if (currentStyle === '清' || !cropShort) {
+                // 若為擦除模式，直接呼叫重置函式將該格子恢復為空地
+                resetCell(cell);
+            } else {
+                // 4. 根據作物簡稱查詢作物基本資訊
                 const cropInfo = findCropByShort(cropShort);
-                cell.className = 'cell'; cell.innerHTML = '';
+                // 5. 將格子的 class 重置為基礎類別 'c-cell'，並清空舊有 HTML 內容
+                cell.className = 'c-cell'; cell.innerHTML = '';
                 
-                if(currentStyle === '流') {
-                    cell.classList.add('bg-style-流光', 't-style-流光');
-                } else if(currentStyle === '星') {
-                    cell.classList.add('bg-style-星空', 't-style-星空');
+                // 6. 背景顏色處理
+                if (currentStyle === '流') {
+                    cell.classList.add('bg-style-流');
+                } else if (currentStyle === '星') {
+                    cell.classList.add('bg-style-星');
                 } else {
                     if (cropInfo.cat === '至臻') cell.classList.add(`bg-crop-${cropShort}`);
                     else cell.classList.add(`bg-cat-${cropInfo.cat}`);
-                    
-                    if(currentStyle === '巨') cell.classList.add('t-style-巨大');
-                    else if(currentStyle === '幻') cell.classList.add('t-style-幻');
-                    else if(currentStyle === '異') cell.classList.add('t-style-異');
-                    else cell.classList.add(`t-${cropInfo.cat}`);
                 }
                 
+                // 7. 【關鍵修正】所有型態都必須掛上作物分類顏色 Class（負責上排文字顏色）
+                cell.classList.add(`t-${cropInfo.cat}`);
+
+                // 8. 獨立掛上型態 Class（負責下排文字顏色與特效）
+                if(currentStyle === '異') cell.classList.add('t-style-異');
+                else if(currentStyle === '幻') cell.classList.add('t-style-幻');
+                else if(currentStyle === '巨') cell.classList.add('t-style-巨');
+                else if(currentStyle === '晶') cell.classList.add('t-style-晶');
+                else if(currentStyle === '流') cell.classList.add('t-style-流');
+                else if(currentStyle === '星') cell.classList.add('t-style-星');
+                
+                // 9. 將種植資訊儲存至 DOM 格子的 dataset 屬性中
                 cell.dataset.crop = cropShort; cell.dataset.style = currentStyle; cell.dataset.lvl = level;
-                let displayTypeLabel = currentStyle === '普' ? '' : currentStyle;
-                cell.innerHTML = `<span class="crop-text">${cropShort}</span><span class="level-text">${displayTypeLabel}${level}</span>`;
+                let displayTypeLabel = currentStyle === '普' ? '' : currentStyle + ' ';
+                cell.innerHTML = `<span class="c-crop-text">${cropShort}</span><span class="c-level-text">${displayTypeLabel}${level}</span>`;
             }
+            // 10. 重新計算全區統計數據
             calculateStats(); 
+            // 11. 若格子上有作物，高亮顯示右側統計表格中對應作物的資料列
             if(cell.dataset.crop) highlightRowInStats(cell.dataset.crop);
+            // 12. 自動將最新的耕地數據與配置同步保存至瀏覽器的 localStorage
             autoSaveData();
         }
 
-        const moveModeBtn = document.getElementById('moveModeBtn');
+        // ============================================================
+        // 【區塊九】進階模式開關與互斥安全控制
+        // ============================================================
+
+        // 1. 取得進階模式按鈕 DOM 元素
+        const moveModeBtn = document.getElementById('js-moveModeBtn');
+        const copyModeBtn = document.getElementById('js-copyModeBtn');
+
+        // 2. 交換模式按鈕點擊事件監聽與互斥邏輯
         moveModeBtn.addEventListener('click', () => {
+            exitCopyMode();
             if (moveModeState === 'off') enterMoveMode(); else exitMoveMode();
         });
 
+        // 3. 複製模式按鈕點擊事件監聽與互斥邏輯
+        copyModeBtn.addEventListener('click', () => {
+            exitMoveMode();
+            if (copyModeState === 'off') enterCopyMode(); else exitCopyMode();
+        });
+
+        // 4. 進入「交換模式」狀態初始化函式
         function enterMoveMode() {
-            moveModeState = 'pick_src';
-            moveModeBtn.className = 'btn btn-move-src';
-            moveModeBtn.textContent = '🔄 請點選 [ 起點格 ]';
-            if(moveSourceCell) moveSourceCell.classList.remove('move-pending-source');
-            moveSourceCell = null;
+            moveModeState           = 'pick_src';
+            moveModeBtn.className   = 'c-btn c-btn-move-src';
+            moveModeBtn.textContent = '🔄 請點選：起點格/田標題';
+            if(moveSourceCell) moveSourceCell.classList.remove('c-move-pending-source');
+            moveSourceCell          = null;
+
+            // 清除舊的整塊田高亮[cite: 4]
+            if(zoneMoveSource) {
+                document.querySelector(`.c-zone[data-zone-id="${zoneMoveSource}"] .c-zone-title`)?.classList.remove('c-zone-pending-source');
+                zoneMoveSource = null;
+            }
+            document.body.classList.add('is-move-mode'); // 啟用 CSS 懸停樣式
         }
 
+        // 5. 退出「交換模式」狀態重置函式
         function exitMoveMode() {
-            moveModeState = 'off';
-            moveModeBtn.className = 'btn btn-move-inactive';
-            moveModeBtn.textContent = '🔄 移動模式: 關閉';
-            if(moveSourceCell) moveSourceCell.classList.remove('move-pending-source');
-            moveSourceCell = null;
+            moveModeState           = 'off';
+            moveModeBtn.className   = 'c-btn c-btn-move-inactive';
+            moveModeBtn.textContent = '🔄 交換模式：關閉';
+            if(moveSourceCell) moveSourceCell.classList.remove('c-move-pending-source');
+            moveSourceCell          = null;
+
+            // 清除舊的整塊田高亮[cite: 4]
+            if(zoneMoveSource) {
+                document.querySelector(`.c-zone[data-zone-id="${zoneMoveSource}"] .c-zone-title`)?.classList.remove('c-zone-pending-source');
+                zoneMoveSource = null;
+            }
+            document.body.classList.remove('is-move-mode');
         }
 
+        // 6. 進入「複製模式」狀態初始化函式
+        function enterCopyMode() {
+            copyModeState           = 'on';
+            copyModeBtn.className   = 'c-btn c-btn-copy-src';
+            copyModeBtn.textContent = '📋 請點選：擷取格';
+            if(copySourceCell) copySourceCell.classList.remove('c-copy-pending-source'); // ★ 清除舊的高亮
+            copySourceCell          = null;
+        }
+        function exitCopyMode() {
+            copyModeState           = 'off';
+            copyModeBtn.className   = 'c-btn c-btn-copy-inactive';
+            copyModeBtn.textContent = '📋 複製模式：關閉';
+            if(copySourceCell) copySourceCell.classList.remove('c-copy-pending-source'); // ★ 清除舊的高亮
+            copySourceCell          = null;
+        }
+
+        // ============================================================
+        // 【區塊十】交換與複製模式核心邏輯處理
+        // ============================================================
+
+        // 1. 複製模式邏輯
+        function handleCopyLogic(cell) {
+            if (!cell.dataset.crop) {
+                alert('❌ 此格子為空，無法複製作物！');
+                return;
+            }
+            // 讀取數據與同步控制台
+            const cropShort = cell.dataset.crop;
+            const cropStyle = cell.dataset.style || '普';
+            const cropLvl   = cell.dataset.lvl   || 1;
+
+            selectCrop   (cropShort);  // 下拉+快捷
+            setBrushStyle(cropStyle);  // 型態
+            document.getElementById('js-levelInput').value = cropLvl; // 數量
+            
+            // 狀態回饋與自動退出
+            showStatus(`📋 已擷取作物：${cropShort} (${cropStyle}${cropLvl})`);
+            exitCopyMode();
+        }
+
+        // 2. 交換模式邏輯
         function handleMoveLogic(cell) {
+            // 階段一：指定起點格
             if (moveModeState === 'pick_src') {
-                moveSourceCell = cell; cell.classList.add('move-pending-source');
-                moveModeState = 'pick_dst';
-                moveModeBtn.className = 'btn btn-move-dst'; moveModeBtn.textContent = '🔄 請點選 [ 終點格 ]';
+                moveSourceCell          = cell; cell.classList.add('c-move-pending-source');
+                moveModeState           = 'pick_dst';
+                moveModeBtn.className   = 'c-btn c-btn-move-dst'; 
+                moveModeBtn.textContent = '🔄 請點選：終點格';
             } 
+            // 階段二：指定終點格與資料對調
             else if (moveModeState === 'pick_dst') {
+                // 點擊原本的起點格，視為取消選擇
                 if (cell === moveSourceCell) {
-                    cell.classList.remove('move-pending-source'); enterMoveMode(); return;
+                    cell.classList.remove('c-move-pending-source'); enterMoveMode(); return;
                 }
+                // 擷取兩格數據並對調
                 const srcData = {
                     crop: moveSourceCell.dataset.crop, style: moveSourceCell.dataset.style, lvl: moveSourceCell.dataset.lvl,
-                    html: moveSourceCell.innerHTML, className: moveSourceCell.className.replace('move-pending-source', '').trim()
+                    html: moveSourceCell.innerHTML, className: moveSourceCell.className.replace('c-move-pending-source', '').trim()
                 };
                 const dstData = {
                     crop: cell.dataset.crop, style: cell.dataset.style, lvl: cell.dataset.lvl,
                     html: cell.innerHTML, className: cell.className
                 };
+                // 將終點資料寫入起點、將起點資料寫入終點
                 writeCellData(moveSourceCell, dstData); writeCellData(cell, srcData);
-                moveSourceCell.classList.remove('move-pending-source');
+                // 完成與收尾
+                moveSourceCell.classList.remove('c-move-pending-source');
                 showStatus('🔄 移動數據交換成功！'); calculateStats(); autoSaveData(); enterMoveMode();
             }
         }
 
-        function writeCellData(targetCell, data) {
-            targetCell.className = data.className; targetCell.innerHTML = data.html;
-            if(data.crop) targetCell.dataset.crop = data.crop; else delete targetCell.dataset.crop;
-            if(data.style) targetCell.dataset.style = data.style; else delete targetCell.dataset.style;
-            if(data.lvl) targetCell.dataset.lvl = data.lvl; else delete targetCell.dataset.lvl;
+        // 處理田地標題點擊 (整塊批次交換)
+        function handleZoneTitleClick(zoneId) {
+            if (moveModeState === 'off') return;
+
+            const currentTitle = document.querySelector(`.c-zone[data-zone-id="${zoneId}"] .c-zone-title`);
+
+            // 如果先前已經單選了某個格子，先取消單格選取
+            if (moveSourceCell) {
+                moveSourceCell.classList.remove('c-move-pending-source');
+                moveSourceCell = null;
+            }
+
+            // 階段一：指定起點田
+            if (!zoneMoveSource) {
+                zoneMoveSource = zoneId;
+                currentTitle.classList.add('c-zone-pending-source');
+                moveModeBtn.className   = 'c-btn c-btn-move-dst';
+                moveModeBtn.textContent = '🔄 請點選：終點格/田標題';
+                showStatus(`🔄 已選取第 ${zoneId} 塊田，請選擇對調標題`);
+            } 
+            
+            // 階段二：指定終點田並對調
+            else {
+                if (zoneMoveSource === zoneId) {
+                    currentTitle.classList.remove('c-zone-pending-source');
+                    enterMoveMode();
+                    return;
+                }
+
+                // 1. 先記錄起點田地編號
+                const tempSrcZone = zoneMoveSource;
+
+                // 2. 對調兩塊田的所有 8x8 格子
+                swapWholeZone(tempSrcZone, zoneId);
+
+                // 3. 清除高亮與狀態
+                document.querySelector(`.c-zone[data-zone-id="${tempSrcZone}"] .c-zone-title`)?.classList.remove('c-zone-pending-source');
+                zoneMoveSource = null;
+
+                // 4. 帶入正確的 tempSrcZone 顯示提示
+                showStatus(`🔄 第 ${tempSrcZone} 塊田與第 ${zoneId} 塊田全數作物交換成功！`);
+                calculateStats();
+                autoSaveData();
+                enterMoveMode();
+            }
         }
 
-        function calculateStats() {
-            const activeCells = document.querySelectorAll('.cell[data-crop]');
-            const statsMap = {}; 
-            let globalTypeTotals = { 普: 0, 幻: 0, 異: 0, 巨: 0, 流: 0, 星: 0 };
-            let totalPlantedGrids = activeCells.length;
-            let totalSeedsCount = 0; 
+        // 執行兩塊田地的全數單元格資料交換
+        function swapWholeZone(srcZone, dstZone) {
+            const srcCells = document.querySelectorAll(`.c-cell[data-zone="${srcZone}"]`);
+            
+            // 判斷兩塊田地的奇偶性是否不同（例如：奇數田 ↔ 偶數田 交換）
+            const isSrcEven = (Number(srcZone) % 2 === 0);
+            const isDstEven = (Number(dstZone) % 2 === 0);
+            const isCrossParity = (isSrcEven !== isDstEven);
 
+            srcCells.forEach(srcCell => {
+                const row = srcCell.dataset.row;
+                const col = srcCell.dataset.col;
+                
+                // 若為「奇數田與偶數田互相交換」，目標格子的 Column 需進行反轉 (9 - col) 避開鏡像
+                const targetCol = isCrossParity ? (9 - Number(col)).toString() : col;
+
+                const dstCell = document.querySelector(`.c-cell[data-zone="${dstZone}"][data-row="${row}"][data-col="${targetCol}"]`);
+
+                if (dstCell) {
+                    const srcData = {
+                        crop: srcCell.dataset.crop, style: srcCell.dataset.style, lvl: srcCell.dataset.lvl,
+                        html: srcCell.innerHTML, className: srcCell.className.replace('c-move-pending-source', '').trim()
+                    };
+                    const dstData = {
+                        crop: dstCell.dataset.crop, style: dstCell.dataset.style, lvl: dstCell.dataset.lvl,
+                        html: dstCell.innerHTML, className: dstCell.className.replace('c-move-pending-source', '').trim()
+                    };
+
+                    writeCellData(srcCell, dstData);
+                    writeCellData(dstCell, srcData);
+                }
+            });
+        }
+
+        // 土地 DOM 屬性寫入核心工具
+        function writeCellData(targetCell, data) {
+            // 取得當前的座標與區域資訊
+            const zone = targetCell.dataset.zone;
+            const row  = targetCell.dataset.row;
+            const col  = targetCell.dataset.col;
+
+            // 先完全清空該格子
+            resetCell(targetCell);
+
+            // 補回座標屬性
+            targetCell.dataset.zone = zone;
+            targetCell.dataset.row  = row;
+            targetCell.dataset.col  = col;
+
+            // 寫入新資料
+            targetCell.className = data.className; 
+            targetCell.innerHTML = data.html;
+            if(data.crop)  targetCell.dataset.crop  = data.crop;
+            if(data.style) targetCell.dataset.style = data.style;
+            if(data.lvl)   targetCell.dataset.lvl   = data.lvl;
+        }
+
+        // ============================================================
+        // 【區塊十一】田間栽種數據即時分析統計與渲染
+        // ============================================================
+
+        function calculateStats() {
+            // 1. 抓取全場所有「有種植作物」的土地格子
+            const activeCells = document.querySelectorAll('.c-cell[data-crop]');
+            const statsMap    = {}; 
+            
+            // 初始化全場 7 種型態的總計累加器
+            let globalTypeTotals  = { 普: 0, 異: 0, 幻: 0, 巨: 0, 晶: 0, 流: 0, 星: 0 };
+            let totalPlantedGrids = activeCells.length;  // 已用格數
+            let totalSeedsCount   = 0;                   // 果實總顆數
+
+            // 2. 遍歷每一個有作物的格子，進行數據統計
             activeCells.forEach(cell => {
-                const crop = cell.dataset.crop; 
+                const crop  = cell.dataset.crop; 
                 const style = cell.dataset.style || '普'; 
-                const lvl = parseInt(cell.dataset.lvl) || 1;
+                const lvl   = parseInt(cell.dataset.lvl) || 1;
                 if(!crop) return;
                 
-                totalSeedsCount += lvl;
-                globalTypeTotals[style]++;
+                totalSeedsCount += lvl;      // 累加果實顆數
+                globalTypeTotals[style]++;   // 累加該型態的全場數量
                 
+                // 若統計表尚未記錄此作物，進行初始化建立
                 if(!statsMap[crop]) {
                     const info = findCropByShort(crop);
                     statsMap[crop] = { 
+                        // ★【修正點 2】：找不到時直接使用 crop (簡稱)，不使用「其他」
                         name: info?.name || crop, 
-                        cat: info?.cat || '其他', 
-                        普: 0, 幻: 0, 異: 0, 巨: 0, 流: 0, 星: 0,
+                        cat:  info?.cat  || '錯誤', 
+                        普: 0, 異: 0, 幻: 0, 巨: 0, 晶: 0, 流: 0, 星: 0,
                         fruitSum: 0 
                     };
                 }
+                // 累加單一作物的型態與果實數
                 statsMap[crop][style]++;
                 statsMap[crop].fruitSum += lvl; 
             });
 
-            document.getElementById('statPlantedGrids').textContent = totalPlantedGrids + " 格";
-            document.getElementById('statRemainGrids').textContent = (512 - totalPlantedGrids) + " 格";
-            document.getElementById('statTotalSeeds').textContent = totalSeedsCount + " 顆";
+            // 3. 更新右側面板最上方的數據儀表板
+            document.getElementById('js-statPlantedGrids').textContent = totalPlantedGrids.toLocaleString() + " 格";
+            document.getElementById('js-statRemainGrids' ).textContent = (512 - totalPlantedGrids).toLocaleString() + " 格";
+            document.getElementById('js-statTotalSeeds'  ).textContent = totalSeedsCount.toLocaleString() + " 顆";
 
-            const statsBody = document.getElementById('statsBody'); statsBody.innerHTML = '';
+            const statsBody = document.getElementById('js-statsBody'); 
+            statsBody.innerHTML = '';  // 清空舊的表格渲染內容
             
-            const summaryTr = document.createElement('tr'); summaryTr.classList.add('total-type-row');
-            const globalSum = globalTypeTotals.普 + globalTypeTotals.幻 + globalTypeTotals.異 + globalTypeTotals.巨 + globalTypeTotals.流 + globalTypeTotals.星;
+            const types = ['普', '異', '幻', '巨', '晶', '流', '星'];
+            const globalCellsHtml = types.map(t => `<td data-type="${t}">${globalTypeTotals[t].toLocaleString()}</td>`).join('');
+            const globalSum = types.reduce((acc, t) => acc + globalTypeTotals[t], 0);
+
+            const summaryTr = document.createElement('tr'); 
+            summaryTr.classList.add('c-total-type-row');
             summaryTr.innerHTML = `
-                <td style="color:#1e40af; font-weight:bold; text-align:left; padding-left:4px;">全部田間總計</td>
-                <td>${globalTypeTotals.普}</td><td style="color:#1d4ed8;">${globalTypeTotals.幻}</td><td style="color:#ea580c;">${globalTypeTotals.異}</td>
-                <td style="color:#ef4444;">${globalTypeTotals.巨}</td><td style="color:#7c3aed;">${globalTypeTotals.流}</td><td style="color:#1e3a8a;">${globalTypeTotals.星}</td>
-                <td style="background:#dbeafe; color:#1e40af; font-weight:bold;">${globalSum}</td>
-                <td style="background:#ffe4e6; color:#b91c1c; font-weight:bold;">${totalSeedsCount}</td>
+                <td class="c-stat-head-title">全部田間總計</td>
+                ${globalCellsHtml}
+                <td class="c-stat-bg-total">${globalSum.toLocaleString()}</td>
+                <td class="c-stat-bg-fruit">${totalSeedsCount.toLocaleString()}</td>
             `;
             statsBody.appendChild(summaryTr);
 
+            // 4. 防錯機制：如果田間完全沒有種植任何作物，顯示「暫無耕作數據」並結束
             if(totalPlantedGrids === 0) {
-                statsBody.innerHTML += `<tr><td colspan="9" style="color:#94a3b8; padding: 20px 0;">暫無耕作數據</td></tr>`; return;
+                statsBody.innerHTML += `<tr><td colspan="10" class="c-no-data-msg">暫無耕作數據</td></tr>`; 
+                return;
             }
 
-            const categoriesOrder = ['至臻', '黃金', '紫色', '藍色', '綠色', '灰色'];
+            // 5. 按稀有度分類（至臻 ➔ 橙色 ➔ ... ➔ 錯誤）依序生成明細表格
+            const categoriesOrder = ['至臻', '橙色', '紫色', '藍色', '綠色', '灰色', '錯誤'];
             categoriesOrder.forEach(currentCat => {
-                const catCrops = cropsData[currentCat].filter(c => statsMap[c.short]);
+                let catCrops = [];
+                if (currentCat === '錯誤') {
+                    // ★【修正點 2】：舊作物直接以簡稱進行顯示與歸歸類
+                    catCrops = Object.keys(statsMap)
+                        .filter(k => statsMap[k].cat === '錯誤')
+                        .map(k => ({ short: k, name: statsMap[k].name }));
+                } else {
+                    catCrops = cropsData[currentCat].filter(c => statsMap[c.short]);
+                }
+                
                 if (catCrops.length > 0) {
+                    const isErrorCat = (currentCat === '錯誤');
+
+                    // 建立跨 10 欄的系列分類標題列
                     const catTitleTr = document.createElement('tr');
-                    catTitleTr.innerHTML = `<td colspan="9" class="cat-row">★ ${currentCat}系列</td>`;
+                    const titleClass = isErrorCat ? 'c-cat-row-error' : 'c-cat-row';
+                    const titleLabel = isErrorCat ? '⚠️ 舊版/未記錄作物' : `★ ${currentCat}系列`;
+                    catTitleTr.innerHTML = `<td colspan="10" class="${titleClass}">${titleLabel}</td>`;
                     statsBody.appendChild(catTitleTr);
 
-                    let catSubTotals = { 普: 0, 幻: 0, 異: 0, 巨: 0, 流: 0, 星: 0, fruitSum: 0 };
+                    // 初始化該稀有度系列的專屬小計歸納器
+                    let catSubTotals = { 普: 0, 異: 0, 幻: 0, 巨: 0, 晶: 0, 流: 0, 星: 0, fruitSum: 0 };
                     
+                    // 遍歷該系列下各個有種植的作物
                     catCrops.forEach(c => {
                         const item = statsMap[c.short];
-                        const itemSum = item.普 + item.幻 + item.異 + item.巨 + item.流 + item.星;
+                        const itemSum = types.reduce((acc, t) => acc + item[t], 0);
                         
-                        catSubTotals.普 += item.普; catSubTotals.幻 += item.幻; catSubTotals.異 += item.異;
-                        catSubTotals.巨 += item.巨; catSubTotals.流 += item.流; catSubTotals.星 += item.星;
-                        catSubTotals.fruitSum += item.fruitSum; 
+                        types.forEach(t => catSubTotals[t] += item[t]);
+                        catSubTotals.fruitSum += item.fruitSum;
 
-                        const itemTr = document.createElement('tr');
-                        itemTr.id = `stat-row-${c.short}`; 
-                        itemTr.style.cursor = 'pointer';
-                        itemTr.innerHTML = `
-                            <td style="font-weight:bold; color:#1e3a8a; text-align:left; padding-left:6px;">${item.name}</td>
-                            <td>${item.普 || '-'}</td><td style="color:#1d4ed8;">${item.幻 || '-'}</td><td style="color:#ea580c;">${item.異 || '-'}</td>
-                            <td>${item.巨 || '-'}</td><td style="color:#7c3aed;">${item.流 || '-'}</td><td style="color:#1e3a8a;">${item.星 || '-'}</td>
-                            <td style="font-weight:bold; background:#f8fafc;">${itemSum}</td>
-                            <td style="font-weight:bold; background:#fff5f5; color:#e11d48;">${item.fruitSum}</td>
+                        const itemTr     = document.createElement('tr');
+                        itemTr.id        = `js-stat-row-${c.short}`; 
+                        itemTr.className = 'c-stat-item-row';
+                        
+                        const itemCellsHtml = types.map(t => `<td data-type="${t}">${formatNum(item[t], '-')}</td>`).join('');
+
+                        // 若為錯誤/舊作物，顯示名稱時掛上紅字標籤
+                        const nameClass = isErrorCat ? 't-錯誤' : `t-${currentCat}`;
+
+                        itemTr.innerHTML = `   
+                            <td class="${nameClass} c-stat-text-left" style="font-weight:bold;">${item.name}</td>
+                            ${itemCellsHtml}
+                            <td class="c-stat-bg-sub">${itemSum.toLocaleString()}</td>
+                            <td class="c-stat-bg-item-fruit">${item.fruitSum.toLocaleString()}</td>
                         `;
                         
                         itemTr.addEventListener('mouseenter', () => highlightCropsOnMap(c.short));
@@ -1090,50 +2020,120 @@
                         statsBody.appendChild(itemTr);
                     });
 
-                    const catSumSum = catSubTotals.普 + catSubTotals.幻 + catSubTotals.異 + catSubTotals.巨 + catSubTotals.流 + catSubTotals.星;
-                    const catSumTr = document.createElement('tr'); catSumTr.classList.add('cat-sum-row');
+                    const catSubCellsHtml = types.map(t => `<td data-type="${t}">${formatNum(catSubTotals[t], '-')}</td>`).join('');
+                    const catSumSum = types.reduce((acc, t) => acc + catSubTotals[t], 0);
+
+                    const catSumTr = document.createElement('tr'); 
+                    catSumTr.classList.add('c-cat-sum-row');
                     catSumTr.innerHTML = `
-                        <td style="text-align:left; padding-left:4px;">系列小計</td>
-                        <td>${catSubTotals.普}</td><td>${catSubTotals.幻}</td><td>${catSubTotals.異}</td>
-                        <td>${catSubTotals.巨}</td><td>${catSubTotals.流}</td><td>${catSubTotals.星}</td>
-                        <td>${catSumSum}</td>
-                        <td style="color:#b91c1c;">${catSubTotals.fruitSum}</td>
+                        <td class="c-stat-text-left">系列小計</td>
+                        ${catSubCellsHtml}
+                        <td>${catSumSum.toLocaleString()}</td>
+                        <td class="c-stat-text-danger">${catSubTotals.fruitSum.toLocaleString()}</td>
                     `;
                     statsBody.appendChild(catSumTr);
                 }
             });
         }
 
-        const dragModeBtn = document.getElementById('dragModeBtn');
+        // ============================================================
+        // 【區塊十二】輔助工具按鈕控制與狀態發布
+        // ============================================================
+
+        const dragModeBtn = document.getElementById('js-dragModeBtn');
         dragModeBtn.addEventListener('click', () => {
             isDragMode = !isDragMode;
-            if (isDragMode) { dragModeBtn.textContent = '連續塗鴉: 開啟 ✔'; dragModeBtn.style.backgroundColor = '#10b981'; }
-            else { dragModeBtn.textContent = '連續塗鴉: 關閉'; dragModeBtn.style.backgroundColor = '#3b82f6'; }
+            syncDragModeUI();
         });
 
-        document.getElementById('clearAllBtn').addEventListener('click', () => {
-            if (confirm('確定要清空全場的大地圖嗎？')) {
-                exitMoveMode();
-                document.querySelectorAll('.cell').forEach(cell => {
-                    cell.className = 'cell'; cell.innerHTML = '';
-                    delete cell.dataset.crop; delete cell.dataset.style; delete cell.dataset.lvl;
-                });
-                calculateStats(); autoSaveData();
+        // 獨立出連續塗鴉按鈕的外觀刷新函式，便於多處呼叫
+        function syncDragModeUI() {
+            if (isDragMode) { 
+                dragModeBtn.textContent = '連續塗鴉：開啟'; 
+                dragModeBtn.classList.add('c-active');
+            } else { 
+                dragModeBtn.textContent = '連續塗鴉：關閉'; 
+                dragModeBtn.classList.remove('c-active');
             }
+        }
+
+        // 清除功能 Modal 邏輯
+        const clearModal = document.getElementById('js-clearModal');
+        const clearAllBtn = document.getElementById('js-clearAllBtn');
+        const clearModalCancel = document.getElementById('js-clearModalCancel');
+        const clearModalConfirm = document.getElementById('js-clearModalConfirm');
+
+        // 開啟 Modal 快選單
+        clearAllBtn.addEventListener('click', () => {
+            clearModal.classList.add('c-modal-open');
+        });
+
+        // 關閉 Modal 快選單
+        function closeClearModal() {
+            clearModal.classList.remove('c-modal-open');
+        }
+
+        clearModalCancel.addEventListener('click', closeClearModal);
+
+        // 點擊背景空白處也可關閉 Modal
+        clearModal.addEventListener('click', (e) => {
+            if (e.target === clearModal) closeClearModal();
+        });
+
+        // 清除地圖作物的獨立輔助函式
+        function clearMapCrops() {
+            exitMoveMode(); 
+            exitCopyMode(); 
+            clearMapCropHighlight();
+            document.querySelectorAll('.c-cell').forEach(cell => {
+                resetCell(cell);
+            });
+            calculateStats();
+        }
+
+        // 清除背包庫存的獨立輔助函式
+        function clearBagInventory() {
+            document.querySelectorAll('.c-inv-input').forEach(input => {
+                input.value = '';
+            });
+            calculateInvTotals();
+        }
+
+        // 點擊「確定」執行對應清除動作
+        clearModalConfirm.addEventListener('click', () => {
+            const selectedOption = document.querySelector('input[name="clearOption"]:checked')?.value;
+
+            if (selectedOption === 'bag') {
+                clearBagInventory();
+                showStatus('🧹 已清空背包庫存！');
+            } else if (selectedOption === 'map') {
+                clearMapCrops();
+                showStatus('🧹 已清空田間作物！');
+            } else if (selectedOption === 'all') {
+                clearBagInventory();
+                clearMapCrops();
+                showStatus('🧹 已清空背包與田間作物！');
+            }
+            autoSaveData();
+            closeClearModal();
         });
 
         function showStatus(msg) {
-            const statusEl = document.getElementById('saveStatus'); statusEl.textContent = msg;
+            const statusEl = document.getElementById('js-saveStatus'); statusEl.textContent = msg;
             setTimeout(() => { statusEl.textContent = '● 系統防丟護航中'; }, 3000);
         }
 
+        // ============================================================
+        // 【區塊十三】本地瀏覽器快取儲存與資料修復載入
+        // ============================================================
+
         function autoSaveData() {
             const mapState = [];
-            document.querySelectorAll('.cell[data-crop]').forEach(cell => {
+            document.querySelectorAll('.c-cell[data-crop]').forEach(cell => {
                 mapState.push({ z: cell.dataset.zone, r: cell.dataset.row, c: cell.dataset.col, crop: cell.dataset.crop, style: cell.dataset.style, lvl: cell.dataset.lvl });
             });
             const invState = [];
-            document.querySelectorAll('.inv-input').forEach(input => {
+            document.querySelectorAll('.c-inv-input').forEach(input => {
                 const val = parseInt(input.value) || 0;
                 if(val > 0) invState.push({ short: input.dataset.short, mode: input.dataset.mode, val: val });
             });
@@ -1144,42 +2144,64 @@
             const saved = localStorage.getItem(STORAGE_KEY); if (!saved) return;
             try {
                 const totalPackage = JSON.parse(saved);
-                document.querySelectorAll('.cell').forEach(cell => {
-                    cell.className = 'cell'; cell.innerHTML = '';
-                    delete cell.dataset.crop; delete cell.dataset.style; delete cell.dataset.lvl;
+                // 1. 徹底清空當前地圖格子狀態
+                document.querySelectorAll('.c-cell').forEach(cell => {
+                    resetCell(cell);
                 });
+               
+                // 2. 恢復地圖資料
                 if(totalPackage.map) {
                     totalPackage.map.forEach(item => {
                         let currentShort = item.crop;
                         if(item.crop && item.crop.length === 1) {
-                            // 舊版本相容資料轉換
                             const found = findCropByShort(item.crop);
                             if(found) currentShort = found.short;
                         }
-                        const cell = document.querySelector(`.cell[data-zone="${item.z}"][data-row="${item.r}"][data-col="${item.c}"]`);
+                        const cell = document.querySelector(`.c-cell[data-zone="${item.z}"][data-row="${item.r}"][data-col="${item.c}"]`);
                         if(cell) {
                             const cropInfo = findCropByShort(currentShort);
+
                             if(cropInfo) {
-                                if(item.style === '流') cell.classList.add('bg-style-流光', 't-style-流光');
-                                else if(item.style === '星') cell.classList.add('bg-style-星空', 't-style-星空');
-                                else {
-                                    if (cropInfo.cat === '至臻') cell.classList.add(`bg-crop-${currentShort}`);
-                                    else cell.classList.add(`bg-cat-${cropInfo.cat}`);
-                                    
-                                    if(item.style === '巨') cell.classList.add('t-style-巨大');
-                                    else if(item.style === '幻') cell.classList.add('t-style-幻');
-                                    else if(item.style === '異') cell.classList.add('t-style-異');
-                                    else cell.classList.add(`t-${cropInfo.cat}`);
+                                // ---- 已知作物的正常渲染邏輯 ----
+                                const cropCat = cropInfo.cat;
+                                if (item.style === '流') {
+                                    cell.classList.add('bg-style-流');
+                                } else if (item.style === '星') {
+                                    cell.classList.add('bg-style-星');
+                                } else {
+                                    if (cropCat === '至臻') {
+                                        cell.classList.add(`bg-crop-${currentShort}`);
+                                    } else {
+                                        cell.classList.add(`bg-cat-${cropCat}`);
+                                    }
                                 }
+
+                                cell.classList.add(`t-${cropInfo.cat}`);
+
+                                if(item.style === '巨') cell.classList.add('t-style-巨');
+                                else if(item.style === '異') cell.classList.add('t-style-異');
+                                else if(item.style === '幻') cell.classList.add('t-style-幻');
+                                else if(item.style === '晶') cell.classList.add('t-style-晶');
+                                else if(item.style === '流') cell.classList.add('t-style-流');
+                                else if(item.style === '星') cell.classList.add('t-style-星');
+                            } else {
+                                // ★【修正點 1】：找不到名稱的舊作物
+                                // 不套用 .bg-cat-錯誤 (粉底)，預設保持白底，並掛上 .t-錯誤 (紅字)
+                                cell.classList.add('t-錯誤');
                             }
-                            cell.dataset.crop = currentShort; cell.dataset.style = item.style || '普'; cell.dataset.lvl = item.lvl || 1;
-                            let styleLabel = item.style === '普' ? '' : item.style;
-                            cell.innerHTML = `<span class="crop-text">${currentShort}</span><span class="level-text">${styleLabel}${item.lvl || 1}</span>`;
+
+                            cell.dataset.crop = currentShort; 
+                            cell.dataset.style = item.style || '普'; 
+                            cell.dataset.lvl = item.lvl || 1;
+                            
+                            let styleLabel = item.style === '普' ? '' : (item.style + ' ');
+                            cell.innerHTML = `<span class="c-crop-text">${currentShort}</span><span class="c-level-text">${styleLabel}${item.lvl || 1}</span>`;
                         }
                     });
                 }
                 
-                document.querySelectorAll('.inv-input').forEach(input => {
+                // 3. 恢復背包資料
+                document.querySelectorAll('.c-inv-input').forEach(input => {
                     input.value = '';
                 });
                 if(totalPackage.inventory) {
@@ -1189,30 +2211,104 @@
                             const found = findCropByShort(item.short);
                             if(found) currentShort = found.short;
                         }
-                        const input = document.querySelector(`.inv-input[data-short="${currentShort}"][data-mode="${item.mode}"]`);
+                        const input = document.querySelector(`.c-inv-input[data-short="${currentShort}"][data-mode="${item.mode}"]`);
                         if(input && item.val > 0) input.value = item.val;
                     });
                 }
                 calculateInvTotals(); calculateStats();
-                if(document.getElementById('cropSelect').value) syncQuickCropButtons(document.getElementById('cropSelect').value);
-            } catch(e) { console.error(e); }
+                if(document.getElementById('js-cropSelect').value) syncQuickCropButtons(document.getElementById('js-cropSelect').value);
+            } catch(e) { console.error(e); }    
         }
 
-        document.getElementById('saveBtn').addEventListener('click', () => { autoSaveData(); showStatus('💾 資料保存成功！'); });
-        document.getElementById('exportBtn').addEventListener('click', () => {
-            autoSaveData(); const saved = localStorage.getItem(STORAGE_KEY) || "{}";
-            const blob = new Blob([saved], {type: "text/plain;charset=utf-8"});
-            const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-            a.download = `蛋仔星空農場備份_${new Date().toLocaleDateString().replace(/\//g, '-')}.txt`; a.click();
-        });
-        document.getElementById('importBtn').addEventListener('click', () => {
-            const jsonStr = prompt("請貼上導出的備份文字：");
-            if(jsonStr) {
-                try { JSON.parse(jsonStr); localStorage.setItem(STORAGE_KEY, jsonStr); loadData(); showStatus('📥 還原成功！'); } catch(e) { alert("代碼不完整！"); }
-            }
+        // ============================================================
+        // 【區塊十四】資料備份檔案下載導出與本地文件讀取還原
+        // ============================================================
+        
+        // 1. 手動點擊保存按鈕
+        document.getElementById('js-saveBtn').addEventListener('click', () => { 
+            autoSaveData(); 
+            showStatus('💾 資料保存成功！'); 
         });
 
+        // 2. 備份資料導出下載 (.txt)
+        document.getElementById('js-exportBtn').addEventListener('click', () => {
+            autoSaveData(); 
+            const saved = localStorage.getItem(STORAGE_KEY) || "{}";
+            
+            // 建立 Blob 與 下載物件 URL
+            const blob = new Blob([saved], { type: "text/plain;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            
+            // 格式化日期檔名（例：瘋農備份資料_2026-08-13.txt）
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const dateStr = `${year}.${month}.${day}`;
+            
+            a.href = url;
+            a.download = `瘋農備份資料_${dateStr}.txt`;
+            a.click();
+            
+            // 釋放記憶體 URL 資源
+            URL.revokeObjectURL(url);
+            showStatus('📤 備份檔案已成功導出！');
+        });
+
+        // 3. 本地備份檔案讀取與還原
+        const importBtn = document.getElementById('js-importBtn');
+        const fileInput = document.getElementById('js-fileInput');
+
+        importBtn.addEventListener('click', () => {
+            fileInput.click(); 
+        });
+
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const fileContent = e.target.result;
+                
+                try {
+                    const parsedData = JSON.parse(fileContent); 
+                    
+                    // 檢查 JSON 格式是否為合法物件
+                    if (typeof parsedData !== 'object' || parsedData === null) {
+                        throw new Error('無效的備份格式');
+                    }
+
+                    // 寫入 LocalStorage 快取並重新渲染畫面
+                    localStorage.setItem(STORAGE_KEY, fileContent); 
+                    loadData(); 
+                    showStatus('🎉 數據檔案匯入成功並已成功還原！');
+                    
+                } catch (error) {
+                    alert('❌ 還原失敗：檔案內容格式不正確，請確認是正確的農場備份文字檔。');
+                } finally {
+                    // 重設 input 值，確保重複選擇同一檔案時能再次觸發 change 事件
+                    fileInput.value = '';
+                }
+            };
+
+            // 處理檔案讀取例外狀況
+            reader.onerror = function() {
+                alert('❌ 檔案讀取失敗，請重新嘗試！');
+                fileInput.value = '';
+            };
+
+            reader.readAsText(file, 'UTF-8');
+        });
+
+        // ============================================================
+        // 【區塊十五】全網頁 DOM 載入完畢守護初始化
+        // ============================================================      
+
         window.addEventListener('DOMContentLoaded', () => { initUI(); loadData(); });
+
     </script>
 </body>
 </html>
