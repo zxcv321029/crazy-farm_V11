@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>蛋仔派對瘋狂農場規劃器 V8.7 (結構優化防反藍版)</title>
+    <style>
+        :root {
+            --bg-main: #f0f4f8;
+            --bg-container: #ffffff;
+            --text-main: #2d3748;
+            --border-color: #cbd5e1;
+            --grid-line: #e2e8f0;
+            --navy-dark: #334155; 
+            --accent-blue: #475569;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, "Microsoft JhengHei", sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            /* 全螢幕禁止反藍選取，提升連續塗鴉體驗 */
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* 頂部控制台 */
+        .header-container {
+            width: 100%;
+            max-width: 1850px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: all 0.2s;
+        }
+
+        .header-container.frozen {
+            position: sticky;
+            top: 0;
+            z-index: 2000;
+            background: var(--bg-main);
+            padding-bottom: 10px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            margin-bottom: 15px;
+        }
+
+        h1 {
+            font-size: 20px;
+            color: #1e3a8a;
+            margin-bottom: 8px;
+            transition: all 0.2s;
+        }
+        .header-container.frozen h1 {
+            font-size: 16px;
+            margin-bottom: 4px;
+            display: inline-block;
+            margin-right: 20px;
+        }
+        .header-container.frozen .controls {
+            padding: 10px 15px;
+        }
+
+        .controls {
+            background: var(--bg-container);
+            padding: 12px 18px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+            border: 1px solid #e2e8f0;
+        }
+
+        .control-row {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+            position: relative;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .quick-crop-panel {
+            width: 100%;
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            background: #f8fafc;
+            padding: 6px 10px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .flex-break {
+            flex-basis: 100%;
+            height: 4px;
+            width: 0;
+        }
+
+        .quick-crop-btn {
+            padding: 4px 8px;
+            font-size: 12px;
+            font-weight: bold;
+            border: 1px solid #cbd5e1;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .quick-crop-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            border-color: #4b5563;
+        }
+        
+        .q-btn-至臻 { background-color: #f0f4ff; color: #1e40af; border-color: #bfdbfe; }
+        .q-btn-黃金 { background-color: #fffbeb; color: #b45309; border-color: #fde68a; }
+        .q-btn-紫色 { background-color: #faf5ff; color: #6b21a8; border-color: #e9d5ff; }
+        .q-btn-藍色 { background-color: #ecfeff; color: #0891b2; border-color: #c5f6fa; }
+        .q-btn-綠色 { background-color: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
+        .q-btn-灰色 { background-color: #f8fafc; color: #475569; border-color: #e2e8f0; }
+
+        .quick-crop-btn.active {
+            background-color: #1e3a8a !important;
+            color: white !important;
+            border-color: #1e3a8a !important;
+            box-shadow: 0 2px 5px rgba(30, 58, 138, 0.4);
+            transform: scale(1.05);
+        }
+
+        /* 優化型態按鈕啟動(active)樣式，防止文字變白 */
+        .type-btn {
+            padding: 4px 10px;
+            border: 1px solid var(--border-color);
+            background: #fff;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        .type-btn.active {
+            background-color: #e0f2fe;
+            color: #1d4ed8;
+            border-color: #3b82f6;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .type-btn[data-type="普"].active { background-color: #e0f2fe; border-color: #3b82f6; color: #1d4ed8; }
+        .type-btn[data-type="幻"].active { background-color: #eff6ff; border-color: #2563eb; color: #1e40af; }
+        .type-btn[data-type="異"].active { background-color: #fff7ed; border-color: #ea580c; color: #c2410c; }
+        .type-btn[data-type="巨"].active { background-color: #fef2f2; border-color: #ef4444; color: #dc2626; }
+        .type-btn[data-type="流"].active {
+            background: linear-gradient(135deg, #e0f2fe, #f3e8ff, #ffedd5);
+            color: #6b21a8;
+            border-color: #a855f7;
+        }
+        .type-btn[data-type="星"].active {
+            background: linear-gradient(135deg, #e0f2fe, #f3e8ff, #ffedd5);
+            color: #1e3a8a;
+            border-color: #6366f1;
+        }
+        .type-btn[data-type="🗙清"].active { background-color: #f1f5f9; border-color: #475569; color: #334155; }
+
+        select, input[type="number"] {
+            padding: 5px 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .freeze-label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            color: #1e3a8a;
+            background: #eff6ff;
+            padding: 4px 8px;
+            border-radius: 6px;
+            border: 1px solid #bfdbfe;
+        }
+
+        .btn {
+            padding: 5px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .btn-primary { background-color: #3b82f6; color: white; }
+        .btn-success { background-color: #10b981; color: white; }
+        .btn-secondary { background-color: #64748b; color: white; }
+        .btn-danger { background-color: #ef4444; color: white; }
+        
+        .btn-move-inactive { background-color: #64748b; color: white; }
+        .btn-move-src { background-color: #d97706; color: white; animation: pulse 1.5s infinite; }
+        .btn-move-dst { background-color: #b45309; color: white; animation: pulse 1s infinite; }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+
+        /* 核心佈局 */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+            width: 100%;
+            max-width: 1850px;
+            align-items: stretch; 
+        }
+
+        @media (min-width: 1400px) {
+            .main-layout {
+                grid-template-columns: 370px 1fr 370px;
+                justify-content: center;
+            }
+        }
+
+        .sidebar-left, .sidebar-right {
+            display: flex;
+            flex-direction: column;
+        }
+
+		.panel-content-card {
+			background: var(--bg-container);
+			padding: 16px;
+			border-radius: 12px;
+			box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+			display: flex;
+			flex-direction: column;
+			max-height: 1800px;
+			border: 1px solid #e2e8f0;
+		}
+
+        .table-scroll-container {
+            flex: 1;
+            overflow-y: auto; 
+            padding-right: 2px;
+        }
+
+        .map-wrapper {
+            background: var(--bg-container);
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid #e2e8f0;
+        }
+
+        .panel-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #1e3a8a;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .inventory-table, .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .inventory-table th, .inventory-table td {
+            font-size: 10px !important;
+        }
+        
+        .inventory-table th, .stats-table th {
+            background: #f8fafc;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            padding: 6px 2px;
+            border-bottom: 2px solid #e2e8f0;
+            color: #64748b;
+        }
+        .inventory-table td {
+            padding: 4px 1px;
+            border-bottom: 1px solid #f1f5f9;
+            text-align: center;
+        }
+        
+        .stats-table th, .stats-table td {
+            font-size: 12px;
+        }
+        .stats-table td {
+            padding: 6px 2px;
+            border-bottom: 1px solid #f1f5f9;
+            text-align: center;
+        }
+
+        .stats-table tr.highlighted-row {
+            background-color: #ffedd5 !important;
+            outline: 2px solid #f97316;
+            z-index: 5;
+        }
+
+        .cat-row {
+            background: #f1f5f9;
+            font-weight: bold !important;
+            text-align: left !important;
+            padding-left: 8px !important;
+            color: #475569;
+        }
+        .cat-sum-row {
+            background: #fff1f2;
+            font-weight: bold !important;
+            color: #e11d48;
+        }
+        .global-inv-sum-row {
+            background: #e0f2fe;
+            font-weight: bold !important;
+            color: #0369a1;
+        }
+
+        .clickable-crop {
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .clickable-crop:hover {
+            background-color: #eff6ff;
+            text-decoration: underline;
+        }
+
+        .inv-input {
+            width: 36px;
+            padding: 2px 1px;
+            text-align: center;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            font-size: 10px !important;
+            -moz-appearance: textfield;
+        }
+        .inv-input::-webkit-outer-spin-button,
+        .inv-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .inv-input::placeholder {
+            color: #94a3b8;
+            font-weight: normal;
+        }
+
+        .map-container {
+            display: grid;
+            grid-template-columns: repeat(2, auto);
+            gap: 20px 30px;
+            justify-content: center;
+            padding: 10px;
+        }
+
+        .zone { 
+            display: flex; 
+            flex-direction: column; 
+            position: relative;
+        }
+        
+        .zone-title {
+            font-size: 13px;
+            font-weight: bold;
+            color: #475569;
+            margin-bottom: 5px;
+            text-align: center;
+            background: #e2e8f0;
+            border-radius: 4px;
+            padding: 2px 0;
+        }
+
+        .grid-10x10 {
+            display: grid;
+            grid-template-columns: 24px repeat(8, 42px) 24px;
+            grid-template-rows: 24px repeat(8, 42px) 24px;
+            border: 2px solid var(--accent-blue);
+            background: #ffffff;
+            position: relative;
+        }
+
+        .axis-label {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 10px;
+            font-weight: bold;
+            color: #64748b;
+            background-color: #f1f5f9;
+            user-select: none;
+            transition: all 0.15s;
+        }
+        .axis-empty {
+            background-color: #e2e8f0;
+        }
+
+        .axis-label.axis-highlighted {
+            background-color: #ffedd5 !important;
+            color: #ea580c !important;
+            font-size: 11px !important;
+            text-shadow: 0px 0px 1px rgba(234, 88, 12, 0.4);
+        }
+
+        .cell {
+            width: 42px;
+            height: 42px;
+            border: 1px solid var(--grid-line);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            position: relative;
+            background-color: #ffffff;
+            overflow: hidden;
+        }
+        .cell:hover { outline: 2px solid #3b82f6; z-index: 10; }
+        
+        .cell.crop-highlight-active {
+            outline: 3px solid #f97316 !important;
+            z-index: 12;
+            box-shadow: 0 0 8px rgba(249, 115, 22, 0.6);
+        }
+
+        .cell.move-pending-source {
+            outline: 3px dashed #d97706 !important;
+            background-color: #fef3c7 !important;
+            z-index: 15;
+        }
+        
+        .cell .crop-text { 
+            font-size: 11px; 
+            font-weight: bold;
+            line-height: 1.2; 
+            text-align: center; 
+            z-index: 2; 
+            margin-bottom: 1px;
+        }
+        .cell .level-text { 
+            font-size: 10px; 
+            font-weight: bold;
+            line-height: 1.2;
+            text-align: center;
+            z-index: 2; 
+        }
+
+        /* 作物背景色定義 */
+        .bg-cat-黃金 { background-color: rgba(255, 247, 237, 0.7) !important; }
+        .bg-cat-紫色 { background-color: rgba(250, 245, 255, 0.7) !important; }
+        .bg-cat-藍色 { background-color: rgba(240, 253, 250, 0.7) !important; }
+        .bg-cat-綠色 { background-color: rgba(240, 253, 244, 0.7) !important; }
+        .bg-cat-灰色 { background-color: rgba(248, 250, 252, 0.7) !important; }
+
+        /* 至臻系列輕盈柔和半透明色格式 */
+        .bg-crop-大菊 { background-color: rgba(254, 240, 138, 0.6) !important; } 
+        .bg-crop-葵花 { background-color: rgba(253, 224, 71, 0.6) !important; }  
+        .bg-crop-松樹 { background-color: rgba(187, 247, 208, 0.6) !important; }  
+        .bg-crop-掌象 { background-color: rgba(134, 239, 172, 0.55) !important; }  
+        .bg-crop-奇菇 { background-color: rgba(253, 186, 116, 0.55) !important; }  
+        .bg-crop-蟠桃 { background-color: rgba(254, 205, 211, 0.6) !important; }  
+        .bg-crop-葡萄 { background-color: rgba(233, 213, 255, 0.65) !important; }  
+        .bg-crop-天椒 { background-color: rgba(252, 165, 165, 0.55) !important; }  
+        .bg-crop-彼岸 { background-color: rgba(254, 163, 180, 0.55) !important; }  
+        .bg-crop-幻月 { background-color: rgba(214, 211, 242, 0.65) !important; }  
+        .bg-crop-龍狗 { background-color: rgba(244, 114, 182, 0.5) !important; }   
+        .bg-crop-紅包 { background-color: rgba(248, 113, 113, 0.5) !important; }   
+        .bg-crop-蘆薈 { background-color: rgba(201, 230, 133, 0.6) !important; }  
+        .bg-crop-月蟾 { background-color: rgba(176, 196, 222, 0.6) !important; }  
+        .bg-crop-月兔 { background-color: rgba(226, 232, 240, 0.65) !important; }  
+        .bg-crop-影梅 { background-color: rgba(244, 182, 214, 0.55) !important; }  
+        .bg-crop-星玫 { background-color: rgba(147, 197, 253, 0.6) !important; }  
+
+        /* 文字與型態樣式 */
+        .t-至臻 { color: rgb(0, 0, 204) !important; }
+        .t-黃金 { color: #c2410c; }
+        .t-紫色 { color: #6b21a8; }
+        .t-藍色 { color: rgb(0, 150, 214) !important; }
+        .t-綠色 { color: #15803d; }
+        .t-灰色 { color: rgb(100, 116, 139) !important; }
+        
+        .t-style-幻 .level-text { color: #1d4ed8 !important; font-weight: 900 !important; font-size: 11px; }
+        .t-style-異 .level-text { color: #ea580c !important; font-weight: 900 !important; font-size: 11px; }
+        .t-style-巨大 .level-text { color: #ef4444 !important; font-weight: 900 !important; font-size: 11px; }
+        
+        .bg-style-流光 { 
+            background: linear-gradient(135deg, rgba(204,246,255,0.7) 0%, rgba(227,213,255,0.7) 40%, rgba(255,203,228,0.7) 70%, rgba(255,233,197,0.7) 100%) !important; 
+            box-shadow: inset 0 0 3px rgba(168, 85, 247, 0.3);
+        }
+        .t-style-流光 .crop-text { color: #2d3748 !important; }
+        .t-style-流光 .level-text { color: #7c3aed !important; font-weight: 900 !important; font-size: 11px; }
+
+        .bg-style-星空 { 
+            background: linear-gradient(135deg, rgba(204,246,255,0.7) 0%, rgba(227,213,255,0.7) 40%, rgba(255,203,228,0.7) 70%, rgba(255,233,197,0.7) 100%) !important; 
+            box-shadow: inset 0 0 4px rgba(99, 102, 241, 0.4);
+        }
+        .t-style-星空 .crop-text { color: #0f172a !important; text-shadow: 0px 0px 1px white; }
+        .t-style-星空 .level-text { color: #1e3a8a !important; font-weight: 900 !important; font-size: 11px; text-shadow: 1px 1px 1px rgba(255,255,255,0.9); }
+
+        #saveStatus { font-size: 13px; color: #059669; font-weight: bold; }
+        .grid-summary-box {
+            background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; margin-bottom: 12px;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px; flex-shrink: 0;
+        }
+        .summary-item { display: flex; flex-direction: column; background: #ffffff; padding: 6px; border-radius: 4px; border: 1px solid #f1f5f9; }
+        .summary-label { color: #64748b; font-weight: 500; }
+        .summary-val { font-size: 14px; font-weight: bold; color: #1e3a8a; margin-top: 2px; }
+        .total-type-row { background: #eff6ff !important; font-weight: bold; color: #1e40af; }
+    </style>
+</head>
+<body>
+
+    <div class="header-container" id="headerTopContainer">
+        <h1>蛋仔派對瘋狂農場規劃器 V8.7</h1>
+        <div class="controls">
+            <div class="control-row">
+                <div class="control-group">
+                    <span>選定作物:</span>
+                    <select id="cropSelect"><option value="">🚫 清除/空白</option></select>
+                </div>
+                <div class="control-group">
+                    <span>型態:</span>
+                    <button class="type-btn active" data-type="普">普</button>
+                    <button class="type-btn" data-type="幻" style="color:#2563eb;">幻</button>
+                    <button class="type-btn" data-type="異" style="color:#ea580c;">異</button>
+                    <button class="type-btn" data-type="巨" style="color:#ef4444;">巨</button>
+                    <button class="type-btn" data-type="流" style="color:#a855f7;">流</button>
+                    <button class="type-btn" data-type="星" style="color:#1e3a8a; background: linear-gradient(135deg, #e0f2fe, #f3e8ff);">星</button>
+                    <button class="type-btn" data-type="🗙清" style="color:#64748b; margin-left: 5px;">🧼 擦除</button>
+                </div>
+                <div class="control-group">
+                    <label for="levelInput">級數:</label>
+                    <input type="number" id="levelInput" min="1" max="9" value="1" style="width: 45px;">
+                </div>
+                <div class="control-group">
+                    <label class="freeze-label">
+                        <input type="checkbox" id="freezeHeaderChk"> 📌 凍結上方控制台
+                    </label>
+                </div>
+            </div>
+            
+            <div class="quick-crop-panel" id="quickCropPanel"></div>
+            
+            <div class="control-row" style="border-top: 1px dashed #e2e8f0; padding-top: 6px;">
+                <button class="btn btn-success" id="dragModeBtn" style="background-color: #10b981;">連續塗鴉: 開啟 ✔</button>
+                <button class="btn btn-move-inactive" id="moveModeBtn">🔄 移動模式: 關閉</button>
+                <button class="btn btn-success" id="saveBtn">💾 保存</button>
+                <button class="btn btn-secondary" id="exportBtn">📤 備份</button>
+                <button class="btn btn-secondary" id="importBtn">📥 還原</button>
+                <button class="btn btn-danger" id="clearAllBtn">🧹 全清</button>
+                <span id="saveStatus">● 系統防丟護航中</span>
+            </div>
+        </div>
+    </div>
+	<div class="main-layout">
+        <div class="sidebar-left">
+            <div class="panel-content-card">
+                <div class="panel-title">🎒 種子背包庫存 (點選名稱選取)</div>
+                <div class="table-scroll-container">
+                    <table class="inventory-table">
+                        <thead><tr><th>作物</th><th>普</th><th>幻</th><th>異</th><th>巨</th><th>流</th><th>星</th></tr></thead>
+                        <tbody id="inventoryBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="map-wrapper">
+            <div class="map-container" id="mapMain">
+                <script>
+                    for(let z=1; z<=8; z++) {
+                        document.write(`
+                        <div class="zone" id="z${z}" data-zone-id="${z}">
+                            <div class="zone-title">第 ${z} 區域</div>
+                            <div class="grid-10x10" data-zone="${z}">`);
+                        
+                        for (let row = 9; row >= 0; row--) {
+                            for (let col = 0; col <= 9; col++) {
+                                if ((row === 0 || row === 9) && (col === 0 || col === 9)) {
+                                    document.write(`<div class="axis-label axis-empty"></div>`);
+                                } 
+                                else if (row === 0 || row === 9) {
+                                    let displayCol = (z % 2 === 0) ? (9 - col) : col;
+                                    document.write(`<div class="axis-label" data-type="col" data-val="${displayCol}">${displayCol}</div>`);
+                                } 
+                                else if (col === 0 || col === 9) {
+                                    document.write(`<div class="axis-label" data-type="row" data-val="${row}">${row}</div>`);
+                                } 
+                                else {
+                                    let finalCol = (z % 2 === 0) ? (9 - col) : col;
+                                    document.write(`<div class="cell" data-zone="${z}" data-row="${row}" data-col="${finalCol}"></div>`);
+                                }
+                            }
+                        }
+                        
+                        document.write(`
+                            </div>
+                        </div>`);
+                    }
+                </script>
+            </div>
+        </div>
+
+        <div class="sidebar-right">
+            <div class="panel-content-card">
+                <div class="panel-title">📊 田間即時栽種統計</div>
+                <div class="grid-summary-box">
+                    <div class="summary-item"><span class="summary-label">總格數</span><span class="summary-val">512 格</span></div>
+                    <div class="summary-item"><span class="summary-label">已使用格數</span><span class="summary-val" id="statPlantedGrids">0 格</span></div>
+                    <div class="summary-item"><span class="summary-label">剩餘可用格數</span><span class="summary-val" id="statRemainGrids">512 格</span></div>
+                    <div class="summary-item" style="border-color:#bbf7d0; background:#f0fdf4;"><span class="summary-label" style="color:#16a34a;">田間種子總數</span><span class="summary-val" id="statTotalSeeds" style="color:#16a34a;">0 顆</span></div>
+                </div>
+                <div class="table-scroll-container">
+                    <table class="stats-table">
+                        <thead><tr><th>作物</th><th>普</th><th>幻</th><th>異</th><th>巨</th><th>流</th><th>星</th><th>總</th><th style="color: #e11d48; font-weight: bold;">果</th></tr></thead>
+                        <tbody id="statsBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 修正核心：完全改用您提供的高可讀性 Map/Dictionary 結構
+        const cropsData = {
+            '至臻': [
+                { name: '大王菊', short: '大菊' }, { name: '向日葵', short: '葵花' }, { name: '松樹', short: '松樹' },
+                { name: '仙人掌象', short: '掌象' }, { name: '驚奇菇', short: '奇菇' }, { name: '蟠桃', short: '蟠桃' },
+                { name: '葡萄', short: '葡萄' }, { name: '朝天椒', short: '天椒' }, { name: '彼岸花', short: '彼岸' },
+                { name: '幻月花', short: '幻月' }, { name: '火龍狗', short: '龍狗' }, { name: '紅包果', short: '紅包' },
+                { name: '蘆薈', short: '蘆薈' }, { name: '月蟾蜍', short: '月蟾' }, { name: '月兔', short: '月兔' },
+                { name: '月影梅', short: '影梅' }, { name: '星空玫瑰', short: '星玫' }
+            ],
+            '黃金': [
+                { name: '草莓', short: '草莓' }, { name: '奇異果', short: '奇異' }, { name: '榴槤', short: '榴槤' },
+                { name: '荔枝', short: '荔枝' }, { name: '月核樹', short: '核樹' }, { name: '液光藤', short: '光藤' },
+                { name: '柚子', short: '柚子' }, { name: '菠菜', short: '菠菜' }
+            ],
+            '紫色': [
+                { name: '香蕉', short: '香蕉' }, { name: '蘋果', short: '蘋果' }, { name: '石榴', short: '石榴' },
+                { name: '椰子', short: '椰子' }, { name: '南瓜', short: '南瓜' }, { name: '櫻桃', short: '櫻桃' },
+                { name: '龍眼', short: '龍眼' }, { name: '柿子', short: '柿子' }, { name: '星葉菜', short: '星葉' },
+                { name: '月莓', short: '月莓' }
+            ],
+            '藍色': [
+                { name: '玉米', short: '玉米' }, { name: '西瓜', short: '西瓜' }, { name: '牽牛花', short: '牽牛' },
+                { name: '梨作物', short: '水梨' }, { name: '橘子', short: '橘子' }, { name: '棉花', short: '棉花' },
+                { name: '白菜', short: '白菜' }, { name: '月環果', short: '月環' }, { name: '銀輝苔', short: '銀苔' },
+                { name: '花生', short: '花生' }, { name: '藍莓', short: '藍莓' }
+            ],
+            '綠色': [
+                { name: '黃瓜', short: '黃瓜' }, { name: '竹子', short: '竹子' }, { name: '大豆', short: '大豆' },
+                { name: '月燈草', short: '月燈' }, { name: '月番茄', short: '月茄' }
+            ],
+            '灰色': [
+                { name: '波斯角', short: '波斯' }, { name: '番茄', short: '番茄' }, { name: '馬鈴薯', short: '洋芋' },
+                { name: '香菇', short: '香菇' }, { name: '月光草', short: '月光' }, { name: '灰壤豆', short: '灰豆' }
+            ]
+        };
+
+        // 扁平化輔助函式，以便舊邏輯查詢個別作物屬性
+        function findCropByShort(shortName) {
+            for (const cat in cropsData) {
+                const found = cropsData[cat].find(c => c.short === shortName);
+                if (found) return { ...found, cat: cat };
+            }
+            return null;
+        }
+
+        let isDragMode = true, isMouseDown = false, currentStyle = '普';
+        let moveModeState = 'off', moveSourceCell = null;
+        const STORAGE_KEY = 'eggy_farm_planner_v5_save';
+
+        function initUI() {
+            const cropSelect = document.getElementById('cropSelect');
+            const quickPanel = document.getElementById('quickCropPanel');
+            quickPanel.innerHTML = ''; 
+
+            const categories = ['至臻', '黃金', '紫色', '藍色', '綠色', '灰色'];
+            
+            categories.forEach(cat => {
+                const groupOpt = document.createElement('optgroup'); 
+                groupOpt.label = cat; 
+                cropSelect.appendChild(groupOpt);
+
+                if (cat === '藍色') {
+                    const br = document.createElement('div');
+                    br.className = 'flex-break';
+                    quickPanel.appendChild(br);
+                }
+
+                cropsData[cat].forEach(c => {
+                    const opt = document.createElement('option'); 
+                    opt.value = c.short; 
+                    opt.textContent = `${c.name}`;
+                    groupOpt.appendChild(opt);
+
+                    const qBtn = document.createElement('button');
+                    qBtn.className = `quick-crop-btn q-btn-${cat}`;
+                    qBtn.textContent = c.short;
+                    qBtn.title = `${c.name} (${cat}系列)`;
+                    qBtn.dataset.short = c.short;
+
+                    qBtn.addEventListener('click', () => selectCrop(c.short));
+                    quickPanel.appendChild(qBtn);
+                });
+            });
+
+            const freezeChk = document.getElementById('freezeHeaderChk');
+            const topContainer = document.getElementById('headerTopContainer');
+            
+            let cachedFreeze = localStorage.getItem('eggy_farm_freeze_pref2');
+            if (cachedFreeze === null) cachedFreeze = true; 
+            else cachedFreeze = (cachedFreeze === 'true');
+            
+            freezeChk.checked = cachedFreeze;
+            if(cachedFreeze) topContainer.classList.add('frozen');
+
+            freezeChk.addEventListener('change', () => {
+                if(freezeChk.checked) {
+                    topContainer.classList.add('frozen');
+                    localStorage.setItem('eggy_farm_freeze_pref2', 'true');
+                } else {
+                    topContainer.classList.remove('frozen');
+                    localStorage.setItem('eggy_farm_freeze_pref2', 'false');
+                }
+            });
+
+            const invBody = document.getElementById('inventoryBody');
+            invBody.innerHTML = ""; 
+
+            const globalSumTr = document.createElement('tr');
+            globalSumTr.className = 'global-inv-sum-row';
+            globalSumTr.innerHTML = `
+                <td style="text-align:left; padding-left:4px;">全部庫存總計</td>
+                <td id="inv-global-普">0</td><td id="inv-global-幻">0</td><td id="inv-global-異">0</td>
+                <td id="inv-global-巨">0</td><td id="inv-global-流">0</td><td id="inv-global-星">0</td>
+            `;
+            invBody.appendChild(globalSumTr);
+
+            categories.forEach(cat => {
+                const catTr = document.createElement('tr'); 
+                catTr.innerHTML = `<td colspan="7" class="cat-row">★ ${cat}系列</td>`; 
+                invBody.appendChild(catTr);
+                
+                const sumTr = document.createElement('tr'); 
+                sumTr.classList.add('cat-sum-row');
+                sumTr.id = `inv-sum-${cat}`;
+                sumTr.innerHTML = `
+                    <td style="text-align:left; padding-left:4px;">系列加總</td>
+                    <td id="inv-sum-${cat}-普">0</td><td id="inv-sum-${cat}-幻">0</td><td id="inv-sum-${cat}-異">0</td>
+                    <td id="inv-sum-${cat}-巨">0</td><td id="inv-sum-${cat}-流">0</td><td id="inv-sum-${cat}-星">0</td>
+                `;
+                invBody.appendChild(sumTr);
+
+                cropsData[cat].forEach(c => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td style="text-align:left; padding-left:4px;" class="t-${cat} clickable-crop" data-short="${c.short}">${c.name}</td>
+                        <td><input type="number" class="inv-input" data-short="${c.short}" data-cat="${cat}" data-mode="普" min="0" placeholder="-"></td>
+                        <td><input type="number" class="inv-input" data-short="${c.short}" data-cat="${cat}" data-mode="幻" min="0" placeholder="-"></td>
+                        <td><input type="number" class="inv-input" data-short="${c.short}" data-cat="${cat}" data-mode="異" min="0" placeholder="-"></td>
+                        <td><input type="number" class="inv-input" data-short="${c.short}" data-cat="${cat}" data-mode="巨" min="0" placeholder="-"></td>
+                        <td><input type="number" class="inv-input" data-short="${c.short}" data-cat="${cat}" data-mode="流" min="0" placeholder="-"></td>
+                        <td><input type="number" class="inv-input" data-short="${c.short}" data-cat="${cat}" data-mode="星" min="0" placeholder="-"></td>
+                    `;
+                    invBody.appendChild(tr);
+                });
+            });
+
+            document.querySelectorAll('.clickable-crop').forEach(element => {
+                element.addEventListener('click', () => selectCrop(element.getAttribute('data-short')));
+            });
+
+            invBody.addEventListener('input', () => {
+                calculateInvTotals(); autoSaveData();
+            });
+
+            cropSelect.addEventListener('change', () => syncQuickCropButtons(cropSelect.value));
+        }
+
+        function selectCrop(shortName) {
+            if(currentStyle === '🗙清') setBrushStyle('普');
+            document.getElementById('cropSelect').value = shortName;
+            syncQuickCropButtons(shortName);
+        }
+
+        function syncQuickCropButtons(activeShort) {
+            document.querySelectorAll('.quick-crop-btn').forEach(btn => {
+                if(btn.dataset.short === activeShort) btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+        }
+
+        function calculateInvTotals() {
+            const categories = ['至臻', '黃金', '紫色', '藍色', '綠色', '灰色'];
+            const modes = ['普', '幻', '異', '巨', '流', '星'];
+            let globalTotals = { 普: 0, 幻: 0, 異: 0, 巨: 0, 流: 0, 星: 0 };
+
+            categories.forEach(cat => {
+                modes.forEach(mode => {
+                    let sum = 0;
+                    document.querySelectorAll(`.inv-input[data-cat="${cat}"][data-mode="${mode}"]`).forEach(input => {
+                        sum += parseInt(input.value) || 0;
+                    });
+                    const sumEl = document.getElementById(`inv-sum-${cat}-${mode}`);
+                    if(sumEl) sumEl.textContent = sum;
+                    globalTotals[mode] += sum;
+                });
+            });
+
+            modes.forEach(mode => {
+                const globalSumEl = document.getElementById(`inv-global-${mode}`);
+                if(globalSumEl) globalSumEl.textContent = globalTotals[mode];
+            });
+        }
+
+        const typeBtns = document.querySelectorAll('.type-btn');
+        typeBtns.forEach(btn => {
+            btn.addEventListener('click', () => setBrushStyle(btn.dataset.type));
+        });
+
+        function setBrushStyle(styleName) {
+            typeBtns.forEach(b => {
+                if(b.dataset.type === styleName) b.classList.add('active');
+                else b.classList.remove('active');
+            });
+            currentStyle = styleName;
+            if(styleName === '🗙清' && moveModeState !== 'off') exitMoveMode();
+        }
+
+        const cells = document.querySelectorAll('.cell');
+        cells.forEach(cell => {
+            cell.addEventListener('mousedown', () => { isMouseDown = true; handleCellClick(cell); });
+            cell.addEventListener('mouseenter', () => { 
+                if (isDragMode && isMouseDown && moveModeState === 'off') applyBrush(cell); 
+                if(cell.dataset.crop) highlightRowInStats(cell.dataset.crop);
+                highlightCrossAxes(cell, true); 
+            });
+            cell.addEventListener('mouseleave', () => {
+                clearStatsHighlight();
+                highlightCrossAxes(cell, false); 
+            });
+        });
+
+        function highlightCrossAxes(cell, shouldHighlight) {
+            const zone = cell.dataset.zone;
+            const row = cell.dataset.row;
+            const col = cell.dataset.col;
+            if(!zone || !row || !col) return;
+
+            const targetLabels = document.querySelectorAll(
+                `.zone[data-zone-id="${zone}"] .axis-label[data-type="row"][data-val="${row}"], ` +
+                `.zone[data-zone-id="${zone}"] .axis-label[data-type="col"][data-val="${col}"]`
+            );
+
+            targetLabels.forEach(label => {
+                if(shouldHighlight) label.classList.add('axis-highlighted');
+                else label.classList.remove('axis-highlighted');
+            });
+        }
+
+        function highlightRowInStats(cropShort) {
+            clearStatsHighlight();
+            const targetRow = document.getElementById(`stat-row-${cropShort}`);
+            if(targetRow) targetRow.classList.add('highlighted-row');
+        }
+
+        function clearStatsHighlight() {
+            document.querySelectorAll('.stats-table tr.highlighted-row').forEach(tr => tr.classList.remove('highlighted-row'));
+        }
+
+        function highlightCropsOnMap(cropShort) {
+            clearMapCropHighlight();
+            document.querySelectorAll(`.cell[data-crop="${cropShort}"]`).forEach(cell => {
+                cell.classList.add('crop-highlight-active');
+            });
+        }
+
+        function clearMapCropHighlight() {
+            document.querySelectorAll('.cell.crop-highlight-active').forEach(cell => cell.classList.remove('crop-highlight-active'));
+        }
+
+        window.addEventListener('mouseup', () => { isMouseDown = false; });
+
+        function handleCellClick(cell) {
+            if (moveModeState !== 'off') handleMoveLogic(cell);
+            else applyBrush(cell);
+        }
+
+        function applyBrush(cell) {
+            const cropShort = document.getElementById('cropSelect').value;
+            let level = parseInt(document.getElementById('levelInput').value) || 1;
+
+            if (currentStyle === '🗙清' || !cropShort) {
+                cell.className = 'cell'; cell.innerHTML = '';
+                delete cell.dataset.crop; delete cell.dataset.style; delete cell.dataset.lvl;
+            } else {
+                const cropInfo = findCropByShort(cropShort);
+                cell.className = 'cell'; cell.innerHTML = '';
+                
+                if(currentStyle === '流') {
+                    cell.classList.add('bg-style-流光', 't-style-流光');
+                } else if(currentStyle === '星') {
+                    cell.classList.add('bg-style-星空', 't-style-星空');
+                } else {
+                    if (cropInfo.cat === '至臻') cell.classList.add(`bg-crop-${cropShort}`);
+                    else cell.classList.add(`bg-cat-${cropInfo.cat}`);
+                    
+                    if(currentStyle === '巨') cell.classList.add('t-style-巨大');
+                    else if(currentStyle === '幻') cell.classList.add('t-style-幻');
+                    else if(currentStyle === '異') cell.classList.add('t-style-異');
+                    else cell.classList.add(`t-${cropInfo.cat}`);
+                }
+                
+                cell.dataset.crop = cropShort; cell.dataset.style = currentStyle; cell.dataset.lvl = level;
+                let displayTypeLabel = currentStyle === '普' ? '' : currentStyle;
+                cell.innerHTML = `<span class="crop-text">${cropShort}</span><span class="level-text">${displayTypeLabel}${level}</span>`;
+            }
+            calculateStats(); 
+            if(cell.dataset.crop) highlightRowInStats(cell.dataset.crop);
+            autoSaveData();
+        }
+
+        const moveModeBtn = document.getElementById('moveModeBtn');
+        moveModeBtn.addEventListener('click', () => {
+            if (moveModeState === 'off') enterMoveMode(); else exitMoveMode();
+        });
+
+        function enterMoveMode() {
+            moveModeState = 'pick_src';
+            moveModeBtn.className = 'btn btn-move-src';
+            moveModeBtn.textContent = '🔄 請點選 [ 起點格 ]';
+            if(moveSourceCell) moveSourceCell.classList.remove('move-pending-source');
+            moveSourceCell = null;
+        }
+
+        function exitMoveMode() {
+            moveModeState = 'off';
+            moveModeBtn.className = 'btn btn-move-inactive';
+            moveModeBtn.textContent = '🔄 移動模式: 關閉';
+            if(moveSourceCell) moveSourceCell.classList.remove('move-pending-source');
+            moveSourceCell = null;
+        }
+
+        function handleMoveLogic(cell) {
+            if (moveModeState === 'pick_src') {
+                moveSourceCell = cell; cell.classList.add('move-pending-source');
+                moveModeState = 'pick_dst';
+                moveModeBtn.className = 'btn btn-move-dst'; moveModeBtn.textContent = '🔄 請點選 [ 終點格 ]';
+            } 
+            else if (moveModeState === 'pick_dst') {
+                if (cell === moveSourceCell) {
+                    cell.classList.remove('move-pending-source'); enterMoveMode(); return;
+                }
+                const srcData = {
+                    crop: moveSourceCell.dataset.crop, style: moveSourceCell.dataset.style, lvl: moveSourceCell.dataset.lvl,
+                    html: moveSourceCell.innerHTML, className: moveSourceCell.className.replace('move-pending-source', '').trim()
+                };
+                const dstData = {
+                    crop: cell.dataset.crop, style: cell.dataset.style, lvl: cell.dataset.lvl,
+                    html: cell.innerHTML, className: cell.className
+                };
+                writeCellData(moveSourceCell, dstData); writeCellData(cell, srcData);
+                moveSourceCell.classList.remove('move-pending-source');
+                showStatus('🔄 移動數據交換成功！'); calculateStats(); autoSaveData(); enterMoveMode();
+            }
+        }
+
+        function writeCellData(targetCell, data) {
+            targetCell.className = data.className; targetCell.innerHTML = data.html;
+            if(data.crop) targetCell.dataset.crop = data.crop; else delete targetCell.dataset.crop;
+            if(data.style) targetCell.dataset.style = data.style; else delete targetCell.dataset.style;
+            if(data.lvl) targetCell.dataset.lvl = data.lvl; else delete targetCell.dataset.lvl;
+        }
+
+        function calculateStats() {
+            const activeCells = document.querySelectorAll('.cell[data-crop]');
+            const statsMap = {}; 
+            let globalTypeTotals = { 普: 0, 幻: 0, 異: 0, 巨: 0, 流: 0, 星: 0 };
+            let totalPlantedGrids = activeCells.length;
+            let totalSeedsCount = 0; 
+
+            activeCells.forEach(cell => {
+                const crop = cell.dataset.crop; 
+                const style = cell.dataset.style || '普'; 
+                const lvl = parseInt(cell.dataset.lvl) || 1;
+                if(!crop) return;
+                
+                totalSeedsCount += lvl;
+                globalTypeTotals[style]++;
+                
+                if(!statsMap[crop]) {
+                    const info = findCropByShort(crop);
+                    statsMap[crop] = { 
+                        name: info?.name || crop, 
+                        cat: info?.cat || '其他', 
+                        普: 0, 幻: 0, 異: 0, 巨: 0, 流: 0, 星: 0,
+                        fruitSum: 0 
+                    };
+                }
+                statsMap[crop][style]++;
+                statsMap[crop].fruitSum += lvl; 
+            });
+
+            document.getElementById('statPlantedGrids').textContent = totalPlantedGrids + " 格";
+            document.getElementById('statRemainGrids').textContent = (512 - totalPlantedGrids) + " 格";
+            document.getElementById('statTotalSeeds').textContent = totalSeedsCount + " 顆";
+
+            const statsBody = document.getElementById('statsBody'); statsBody.innerHTML = '';
+            
+            const summaryTr = document.createElement('tr'); summaryTr.classList.add('total-type-row');
+            const globalSum = globalTypeTotals.普 + globalTypeTotals.幻 + globalTypeTotals.異 + globalTypeTotals.巨 + globalTypeTotals.流 + globalTypeTotals.星;
+            summaryTr.innerHTML = `
+                <td style="color:#1e40af; font-weight:bold; text-align:left; padding-left:4px;">全部田間總計</td>
+                <td>${globalTypeTotals.普}</td><td style="color:#1d4ed8;">${globalTypeTotals.幻}</td><td style="color:#ea580c;">${globalTypeTotals.異}</td>
+                <td style="color:#ef4444;">${globalTypeTotals.巨}</td><td style="color:#7c3aed;">${globalTypeTotals.流}</td><td style="color:#1e3a8a;">${globalTypeTotals.星}</td>
+                <td style="background:#dbeafe; color:#1e40af; font-weight:bold;">${globalSum}</td>
+                <td style="background:#ffe4e6; color:#b91c1c; font-weight:bold;">${totalSeedsCount}</td>
+            `;
+            statsBody.appendChild(summaryTr);
+
+            if(totalPlantedGrids === 0) {
+                statsBody.innerHTML += `<tr><td colspan="9" style="color:#94a3b8; padding: 20px 0;">暫無耕作數據</td></tr>`; return;
+            }
+
+            const categoriesOrder = ['至臻', '黃金', '紫色', '藍色', '綠色', '灰色'];
+            categoriesOrder.forEach(currentCat => {
+                const catCrops = cropsData[currentCat].filter(c => statsMap[c.short]);
+                if (catCrops.length > 0) {
+                    const catTitleTr = document.createElement('tr');
+                    catTitleTr.innerHTML = `<td colspan="9" class="cat-row">★ ${currentCat}系列</td>`;
+                    statsBody.appendChild(catTitleTr);
+
+                    let catSubTotals = { 普: 0, 幻: 0, 異: 0, 巨: 0, 流: 0, 星: 0, fruitSum: 0 };
+                    
+                    catCrops.forEach(c => {
+                        const item = statsMap[c.short];
+                        const itemSum = item.普 + item.幻 + item.異 + item.巨 + item.流 + item.星;
+                        
+                        catSubTotals.普 += item.普; catSubTotals.幻 += item.幻; catSubTotals.異 += item.異;
+                        catSubTotals.巨 += item.巨; catSubTotals.流 += item.流; catSubTotals.星 += item.星;
+                        catSubTotals.fruitSum += item.fruitSum; 
+
+                        const itemTr = document.createElement('tr');
+                        itemTr.id = `stat-row-${c.short}`; 
+                        itemTr.style.cursor = 'pointer';
+                        itemTr.innerHTML = `
+                            <td style="font-weight:bold; color:#1e3a8a; text-align:left; padding-left:6px;">${item.name}</td>
+                            <td>${item.普 || '-'}</td><td style="color:#1d4ed8;">${item.幻 || '-'}</td><td style="color:#ea580c;">${item.異 || '-'}</td>
+                            <td>${item.巨 || '-'}</td><td style="color:#7c3aed;">${item.流 || '-'}</td><td style="color:#1e3a8a;">${item.星 || '-'}</td>
+                            <td style="font-weight:bold; background:#f8fafc;">${itemSum}</td>
+                            <td style="font-weight:bold; background:#fff5f5; color:#e11d48;">${item.fruitSum}</td>
+                        `;
+                        
+                        itemTr.addEventListener('mouseenter', () => highlightCropsOnMap(c.short));
+                        itemTr.addEventListener('mouseleave', () => clearMapCropHighlight());
+
+                        statsBody.appendChild(itemTr);
+                    });
+
+                    const catSumSum = catSubTotals.普 + catSubTotals.幻 + catSubTotals.異 + catSubTotals.巨 + catSubTotals.流 + catSubTotals.星;
+                    const catSumTr = document.createElement('tr'); catSumTr.classList.add('cat-sum-row');
+                    catSumTr.innerHTML = `
+                        <td style="text-align:left; padding-left:4px;">系列小計</td>
+                        <td>${catSubTotals.普}</td><td>${catSubTotals.幻}</td><td>${catSubTotals.異}</td>
+                        <td>${catSubTotals.巨}</td><td>${catSubTotals.流}</td><td>${catSubTotals.星}</td>
+                        <td>${catSumSum}</td>
+                        <td style="color:#b91c1c;">${catSubTotals.fruitSum}</td>
+                    `;
+                    statsBody.appendChild(catSumTr);
+                }
+            });
+        }
+
+        const dragModeBtn = document.getElementById('dragModeBtn');
+        dragModeBtn.addEventListener('click', () => {
+            isDragMode = !isDragMode;
+            if (isDragMode) { dragModeBtn.textContent = '連續塗鴉: 開啟 ✔'; dragModeBtn.style.backgroundColor = '#10b981'; }
+            else { dragModeBtn.textContent = '連續塗鴉: 關閉'; dragModeBtn.style.backgroundColor = '#3b82f6'; }
+        });
+
+        document.getElementById('clearAllBtn').addEventListener('click', () => {
+            if (confirm('確定要清空全場的大地圖嗎？')) {
+                exitMoveMode();
+                document.querySelectorAll('.cell').forEach(cell => {
+                    cell.className = 'cell'; cell.innerHTML = '';
+                    delete cell.dataset.crop; delete cell.dataset.style; delete cell.dataset.lvl;
+                });
+                calculateStats(); autoSaveData();
+            }
+        });
+
+        function showStatus(msg) {
+            const statusEl = document.getElementById('saveStatus'); statusEl.textContent = msg;
+            setTimeout(() => { statusEl.textContent = '● 系統防丟護航中'; }, 3000);
+        }
+
+        function autoSaveData() {
+            const mapState = [];
+            document.querySelectorAll('.cell[data-crop]').forEach(cell => {
+                mapState.push({ z: cell.dataset.zone, r: cell.dataset.row, c: cell.dataset.col, crop: cell.dataset.crop, style: cell.dataset.style, lvl: cell.dataset.lvl });
+            });
+            const invState = [];
+            document.querySelectorAll('.inv-input').forEach(input => {
+                const val = parseInt(input.value) || 0;
+                if(val > 0) invState.push({ short: input.dataset.short, mode: input.dataset.mode, val: val });
+            });
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({ map: mapState, inventory: invState }));
+        }
+
+        function loadData() {
+            const saved = localStorage.getItem(STORAGE_KEY); if (!saved) return;
+            try {
+                const totalPackage = JSON.parse(saved);
+                document.querySelectorAll('.cell').forEach(cell => {
+                    cell.className = 'cell'; cell.innerHTML = '';
+                    delete cell.dataset.crop; delete cell.dataset.style; delete cell.dataset.lvl;
+                });
+                if(totalPackage.map) {
+                    totalPackage.map.forEach(item => {
+                        let currentShort = item.crop;
+                        if(item.crop && item.crop.length === 1) {
+                            // 舊版本相容資料轉換
+                            const found = findCropByShort(item.crop);
+                            if(found) currentShort = found.short;
+                        }
+                        const cell = document.querySelector(`.cell[data-zone="${item.z}"][data-row="${item.r}"][data-col="${item.c}"]`);
+                        if(cell) {
+                            const cropInfo = findCropByShort(currentShort);
+                            if(cropInfo) {
+                                if(item.style === '流') cell.classList.add('bg-style-流光', 't-style-流光');
+                                else if(item.style === '星') cell.classList.add('bg-style-星空', 't-style-星空');
+                                else {
+                                    if (cropInfo.cat === '至臻') cell.classList.add(`bg-crop-${currentShort}`);
+                                    else cell.classList.add(`bg-cat-${cropInfo.cat}`);
+                                    
+                                    if(item.style === '巨') cell.classList.add('t-style-巨大');
+                                    else if(item.style === '幻') cell.classList.add('t-style-幻');
+                                    else if(item.style === '異') cell.classList.add('t-style-異');
+                                    else cell.classList.add(`t-${cropInfo.cat}`);
+                                }
+                            }
+                            cell.dataset.crop = currentShort; cell.dataset.style = item.style || '普'; cell.dataset.lvl = item.lvl || 1;
+                            let styleLabel = item.style === '普' ? '' : item.style;
+                            cell.innerHTML = `<span class="crop-text">${currentShort}</span><span class="level-text">${styleLabel}${item.lvl || 1}</span>`;
+                        }
+                    });
+                }
+                
+                document.querySelectorAll('.inv-input').forEach(input => {
+                    input.value = '';
+                });
+                if(totalPackage.inventory) {
+                    totalPackage.inventory.forEach(item => {
+                        let currentShort = item.short;
+                        if(item.short && item.short.length === 1) {
+                            const found = findCropByShort(item.short);
+                            if(found) currentShort = found.short;
+                        }
+                        const input = document.querySelector(`.inv-input[data-short="${currentShort}"][data-mode="${item.mode}"]`);
+                        if(input && item.val > 0) input.value = item.val;
+                    });
+                }
+                calculateInvTotals(); calculateStats();
+                if(document.getElementById('cropSelect').value) syncQuickCropButtons(document.getElementById('cropSelect').value);
+            } catch(e) { console.error(e); }
+        }
+
+        document.getElementById('saveBtn').addEventListener('click', () => { autoSaveData(); showStatus('💾 資料保存成功！'); });
+        document.getElementById('exportBtn').addEventListener('click', () => {
+            autoSaveData(); const saved = localStorage.getItem(STORAGE_KEY) || "{}";
+            const blob = new Blob([saved], {type: "text/plain;charset=utf-8"});
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+            a.download = `蛋仔星空農場備份_${new Date().toLocaleDateString().replace(/\//g, '-')}.txt`; a.click();
+        });
+        document.getElementById('importBtn').addEventListener('click', () => {
+            const jsonStr = prompt("請貼上導出的備份文字：");
+            if(jsonStr) {
+                try { JSON.parse(jsonStr); localStorage.setItem(STORAGE_KEY, jsonStr); loadData(); showStatus('📥 還原成功！'); } catch(e) { alert("代碼不完整！"); }
+            }
+        });
+
+        window.addEventListener('DOMContentLoaded', () => { initUI(); loadData(); });
+    </script>
+</body>
+</html>
