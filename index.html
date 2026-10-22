@@ -3,228 +3,216 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>瘋農規劃器 V11</title>
+    <title>瘋農規劃器 V10</title>
     <style>
     
     /* ============================================================ */
-    /* 1. 全域配置與網頁主體背景                                      */
+    /* 區塊一：全域配置與網頁主體背景                                  */
     /* ============================================================ */
 
         /* 定義網頁全域主題配色（CSS 變數） */
         :root {
-            --bg-main        : #f0f4f8; /* 主網頁背景色 */
-            --bg-container   : #ffffff; /* 主容器背景色 */
-            --text-main      : #2d3748; /* 主要文字顏色 */
-            --border-color   : #cbd5e1; /* 通用邊框顏色 */
-            --grid-line      : #e2e8f0; /* 主網格線顏色 */
-            --navy-dark      : #334155; /* 強調色 */
-            --accent-blue    : #475569; /* 強調色 */
+            --bg-main        : #f0f4f8;                     /* 主網頁背景色 */
+            --bg-container   : #ffffff;                     /* 主容器背景色 */
+            --text-main      : #2d3748;                     /* 主要文字顏色 */
+            --grid-line      : #e2e8f0;                     /* 主網格線顏色 */
+            --border-grid    : 1px solid #e2e8f0;           /* 主邊框線顏色 */ 
+            --accent-blue    : #475569;                     /* 強調色 */
 
-            --color-type-pu  : #000000; /* 普 */
-            --color-type-yi  : #00b050; /* 異 */
-            --color-type-huan: #00b0f0; /* 幻 */
-            --color-type-ju  : #ff0000; /* 巨 */
-            --color-type-jing: #2563eb; /* 晶 */
-            --color-type-liu : #a855f7; /* 流 */
-            --color-type-xing: #ed7d31; /* 星 */
+            --color-type-yi  : #00b050;                     /* 異 */
+            --color-type-huan: #00b0f0;                     /* 幻 */
+            --color-type-ju  : #ff0000;                     /* 巨 */
+            --color-type-pu  : #000000;                     /* 普 */
+            --color-type-yin : #71717a;                     /* 銀 */
+            --color-type-jin : #eab308;                     /* 金 */
+            --color-type-jing: #2563eb;                     /* 晶 */
+            --color-type-liu : #a855f7;                     /* 流 */
+            --color-type-xing: #ed7d31;                     /* 星 */
         }
 
         /* 全域全選設定：尺寸計算包含邊框與內距、網頁的字體優先順序 */
         * {
-            box-sizing : border-box;
-            margin     : 0; /* 外距 */
-            padding    : 0; /* 內距 */
+            box-sizing : border-box;                          /* 元素總寬高含內距及邊框 */
+            margin     : 0;                                   /* 外距 */
+            padding    : 0;                                   /* 內距 */
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, "Microsoft JhengHei", sans-serif;
         }
 
         /* 網頁主體背景、彈性排版正中對齊與防反藍設定 */
         body {
-            background-color   : var(--bg-main);
-            color              : var(--text-main); 
-            padding            : 15px;
-            display            : flex;
-            flex-direction     : column;
-            align-items        : center;
-            min-height         : 100vh;
-            user-select        : none;
-            -webkit-user-select: none;
+            display            : flex;                        /* 彈性 */
+            align-items        : center;                      /* 水平置中對齊 */
+            flex-direction     : column;                      /* 垂直縱向排列 */
+            min-height         : 100vh;                       /* 畫面最小高度為視窗可見高度的 100% */
+            padding            : 15px;                        /* 內距 */
+            background-color   : var(--bg-main);              /* 背景顏色 */
+            color              : var(--text-main);            /* 文字顏色 */
+            user-select        : none;                        /* 關閉網頁選取藍底功能 */
+            -webkit-user-select: none;                        /* 關閉網頁選取藍底功能 */
         }
 
     /* ============================================================ */
-    /* 2. 頂部大標題與 sticky 凍結控制台                              */
+    /* 區塊二：頂部大標題與 sticky 凍結控制台                          */
     /* ============================================================ */
 
-        /* 頂部控制台：凍結視窗前 */
-        .c-header-container {
-            width        : 100%;
-            max-width    : 1850px;
-            text-align   : center;
-            margin-bottom: 20px;
-            transition   : all 0.2s;
+        h1 {                                                  /* 標題動態大小與控制台外觀 */
+            margin         : 5px;                             /* 外距 */
+            color          : #1e3a8a;                       /* 標題顏色 */
+            font-size      : 20px;                            /* 字型大小 */
+            text-align     : center;                          /* 水平置中 */
         }
 
-        /* 頂部控制台：凍結視窗後 */
-        .c-header-container.c-frozen {
-            position      : sticky;
-            top           : 5px;
-            z-index       : 2000;
-            background    : var(--bg-main);
-            padding-bottom: 5px;
-            box-shadow    : 0 8px 30px rgba(0,0,0,0.12);
-            margin-bottom : 5px;
-            width         : 100%;
-            max-width     : 1850px;
-            margin-left   : auto;
-            margin-right  : auto;
+        .c-header-container {                                 /* 頂部控制台外層容器 */
+            width          : 100%;                            /* 外層容器，寬度佔滿 100% */
+            max-width      : 1850px;                          /* 最大寬度，防止過寬 */
+            margin-bottom  : 10px;                            /* 下方外距 */
+            text-align     : center;                          /* 文字與元素水平置中 */
+            transition     : all 0.2s;                        /* 過渡動畫時間 */
         }
 
-        /* 標題動態大小與控制台外觀 */
-        h1 {
-            font-size    : 20px;
-            color        : #1e3a8a;
-            margin-top   : 5px;
-            margin-bottom: 10px;
-            text-align   : center;
+        .c-controls {                                         /* 控制台白色箱型區 */
+            display        : flex;                            /* 彈性排版 */
+            flex-direction : column;                          /* 垂直縱向排列 */
+            align-items    : center;                          /* 水平置中對齊 */
+            gap            : 5px;                             /* 上下行之間距 */
+            padding        : 10px;                            /* 上下左右內距 */
+            background     : var(--bg-container);             /* 背景顏色 */
+            border         : var(--border-grid);              /* 邊框顏色 */
+            border-radius  : 12px;                            /* 四角圓角 */
+            box-shadow     : 0 2px 8px rgba(0,0,0,0.06);    /* 陰影 */
         }
 
-        /* 控制台大白色箱型區域 */
-        .c-controls {
-            background    : var(--bg-container);
-            padding       : 10px 10px;
-            border-radius : 12px;
-            box-shadow    : 0 2px 8px rgba(0,0,0,0.06);
-            display       : flex;
-            flex-direction: column;
-            gap           : 5px;  /* 上下行的間距 */
-            align-items   : center;
-            border        : 1px solid #e2e8f0;
+        .c-control-row {                                      /* 控制台橫列排版與群組間距 */
+            position       : relative;                        /* 相對定位 */
+            display        : flex;                            /* 彈性排版 */
+            flex-wrap      : wrap;                            /* 自動換行 */
+            justify-content: center;                          /* 水平置中對齊 */
+            align-items    : center;                          /* 同行垂直置中對齊 */
+            gap            : 10px;                            /* 橫向間距 */
+            width          : 100%;                            /* 寬度佔滿 100% */
         }
 
-        /* 控制台橫列排版與群組間距 */
-        .c-control-row {
-            display        : flex;
-            gap            : 10px;  /* 同行中的間距 */
-            align-items    : center;
-            flex-wrap      : wrap;  /* 自動換行 */
-            justify-content: center;
-            width          : 100%;
-            position       : relative;
+        .c-control-group {                                    /* 元件內部小群組 */
+            display        : flex;                            /* 彈性排版 */
+            align-items    : center;                          /* 同行垂直置中對齊 */
+            gap            : 10px;                            /* 橫向間距 */
+            font-size      : 14px;                            /* 文字大小 */
+            font-weight    : bold;                            /* 文字粗體 */
         }
 
-        /* 元件內部小群組 */
-        .c-control-group {
-            display    : flex;
-            align-items: center;
-            gap        : 10px;  /* 同行中的間距 */
-            font-size  : 14px;
-            font-weight: bold;
+        .c-header-container.c-frozen {                        /* 頂部控制台：凍結視窗後 */
+            position       : sticky;                          /* 設定定位方式 */
+            top            : 5px;                             /* 凍結頂部距離 */
+            z-index        : 2000;                            /* 設定超高層級 */
+            width          : 100%;                            /* 寬度維持 100% */
+            max-width      : 1850px;                          /* 最大寬度維持 */
+            margin         : 5px auto;                        /* 上下左右外距 */
+            padding-bottom : 5px;                             /* 凍結下方內距 */
+            background     : var(--bg-main);                  /* 主背景色，防止透視 */
+            box-shadow     : 0 5px 30px rgba(0,0,0,0.12);   /* 懸浮陰影 */
         }
 
     /* ============================================================ */
-    /* 3. 控制台內部元件群                                            */
+    /* 區塊三：控制台內部元件群                                       */
     /* ============================================================ */
 
-        /* 第一排：[選定作物] 下拉選單 與 [果實] 數字輸入框 的共通樣式 */
-        select, input[type="number"] {
-            padding      : 3px 5px;
-            border       : 1px solid var(--border-color);
-            border-radius: 8px;
-            font-size    : 14px;
-            outline      : none;
+        select, input[type="number"] {                        /* 第一排：[選定作物] 下拉選單 與 [果實] 數字輸入框 的共通樣式 */
+            padding      : 4px 10px;                          /* 上下左右內距 */
+            border       : var(--border-grid);                /* 實線邊框顏色 */
+            border-radius: 8px;                               /* 四角圓角 */
+            outline      : none;                              /* 外圍輪廓線 */
+            font-size    : 14px;                              /* 文字大小 */
         }
 
-        /* 第一排：型態按鈕通用樣式 */
-        .c-type-btn {
-            padding      : 4px 10px;
-            border       : 1px solid var(--border-color);
-            background   : #fff;
-            border-radius: 8px;
-            cursor       : pointer;
-            font-size    : 13px;
-            transition   : all 0.2s;
+        .c-type-btn {                                         /* 第一排：型態按鈕通用樣式 */
+            padding      : 4px 10px;                          /* 上下左右內距 */
+            background   : #ffffff;                         /* 預設純白背景 */
+            border       : var(--border-grid);                /* 實線邊框顏色 */
+            border-radius: 8px;                               /* 四角圓角 */
+            font-size    : 14px;                              /* 文字大小 */
+            cursor       : pointer;                           /* 滑鼠點擊手式 */
+            transition   : all 0.2s;                          /* 過渡動畫時間 */
         }
-        
-        /* 點擊後的物理陰影 */
-        .c-type-btn.c-active {
-            box-shadow : inset 0 1px 3px rgba(0,0,0,0.15);
+
+        .c-type-btn.c-active {                                /* 點擊後的物理陰影 */
+            box-shadow : inset 0 1px 3px rgba(0,0,0,0.15);  /* 內陰影 */
         }
-        
+
         /* 各作物型態：字體配色 */
-        [data-type="普"] { color: var(--color-type-pu);   }
         [data-type="異"] { color: var(--color-type-yi);   }
         [data-type="幻"] { color: var(--color-type-huan); }
         [data-type="巨"] { color: var(--color-type-ju);   }
+        [data-type="普"] { color: var(--color-type-pu);   }
+        [data-type="銀"] { color: var(--color-type-yin);  }
+        [data-type="金"] { color: var(--color-type-jin);  }
         [data-type="晶"] { color: var(--color-type-jing); }
         [data-type="流"] { color: var(--color-type-liu);  }
         [data-type="星"] { color: var(--color-type-xing); }
         [data-type="清"] { color: var(--color-type-ju);   }
-        
+
         /* 各作物型態：點擊時的配色 */
-        .c-type-btn[data-type="普"].c-active { background-color : #f1f5f9; border-color : #94a3b8; }   
         .c-type-btn[data-type="異"].c-active { background-color : #e6f7ed; border-color : #00b050; }
         .c-type-btn[data-type="幻"].c-active { background-color : #e6fafe; border-color : #00b0f0; }
         .c-type-btn[data-type="巨"].c-active { background-color : #fef2f2; border-color : #ff0000; }
+        .c-type-btn[data-type="普"].c-active { background-color : #f1f5f9; border-color : #94a3b8; }
+        .c-type-btn[data-type="銀"].c-active { background-color : #f4f4f5; border-color : #a1a1aa; }
+        .c-type-btn[data-type="金"].c-active { background-color : #fefce8; border-color : #eab308; }
         .c-type-btn[data-type="晶"].c-active { background-color : #eff6ff; border-color : #2563eb; }
         .c-type-btn[data-type="流"].c-active { background : linear-gradient(135deg, #e0f2fe, #f3e8ff, #ffedd5); border-color: #a855f7 }
         .c-type-btn[data-type="星"].c-active { background : linear-gradient(135deg, #bae6fd, #ecf5fa, #6294f1); border-color: #ed7d31 }
         .c-type-btn[data-type="清"].c-active { background-color : #fef2f2; border-color : #ff0000; }
 
-        /* 凍結上方控制台核取方塊標籤 */
-        .c-freeze-label {
-            display      : flex;
-            align-items  : center;
-            gap          : 6px;
-            cursor       : pointer;
-            font-size    : 13px;
-            color        : #1e3a8a;
-            background   : #eff6ff;
-            padding      : 4px 10px;
-            border-radius: 6px;
-            border       : 1px solid #bfdbfe;
+        .c-freeze-label {                                     /* 凍結上方控制台核取方塊標籤 */
+            display      : flex;                              /* 彈性排版 */
+            align-items  : center;                            /* 同行垂直置中對齊 */
+            gap          : 6px;                               /* 橫向間距 */
+            padding      : 4px 10px;                          /* 上下左右內距 */
+            background   : #eff6ff;                         /* 背景顏色 */
+            border       : 1px solid #bfdbfe;               /* 實線邊框顏色 */
+            border-radius: 6px;                               /* 四角圓角 */
+            color        : #1e3a8a;                         /* 字體顏色 */
+            font-size    : 14px;                              /* 文字大小 */
+            cursor       : pointer;                           /* 滑鼠點擊手式 */
         }
 
         /* ============================================================ */
-        /* 4. 快捷作物面板                                               */
+        /* 區塊四：快捷作物面板                                           */
         /* ============================================================ */
 
-        /* 第二排：快捷作物面板 */
-        .c-quick-crop-panel {
-            width          : 99.5%;
-            display        : flex;
-            gap            : 5px;
-            flex-wrap      : wrap;
-            justify-content: center;
-            align-items    : center;
-            background     : #f8fafc;
-            padding        : 5px 10px;
-            border-radius  : 12px;
-            border         : 1px solid #e2e8f0;
-        }
-        
-        /* 強制換行 */
-        .c-flex-break {
-            flex-basis: 100%;
-            height    : 0px;
-            width     : 0;
-        }
-        
-        /* 快捷作物小按鈕 */
-        .c-quick-crop-btn {
-            padding      : 2.5px 6px;
-            font-size    : 12px;
-            border       : 1px solid #cbd5e1;
-            border-radius: 6px;
-            cursor       : pointer;
-            transition   : all 0.15s;
+        .c-quick-crop-panel {                                        /* 第二排：快捷作物面板 */
+            display        : flex;                                   /* 彈性排版 */
+            flex-wrap      : wrap;                                   /* 自動換行 */
+            justify-content: center;                                 /* 水平置中對齊 */
+            align-items    : center;                                 /* 同行垂直置中對齊 */
+            gap            : 5px;                                    /* 元件間距 */
+            width          : 99.5%;                                  /* 寬度占比 */
+            padding        : 5px 10px;                               /* 上下左右內距 */
+            background     : #f8fafc;                              /* 背景顏色 */
+            border         : var(--border-grid);                     /* 邊框顏色 */
+            border-radius  : 12px;                                   /* 圓角弧度 */
         }
 
-        /* 進階懸浮小特效 */
-        .c-quick-crop-btn:hover {
-            transform   : translateY(-1px);
-            box-shadow  : 0 2px 4px rgba(0,0,0,0.08);
-            border-color: #4b5563;
+        .c-flex-break {                                              /* 強制換行 */
+            flex-basis: 100%;                                        /* 主軸基準尺寸佔滿整行 */
+            width     : 0;                                           /* 寬度歸零 */
+            height    : 0px;                                         /* 高度歸零 */
         }
-        
+
+        .c-quick-crop-btn {                                          /* 快捷作物小按鈕 */
+            padding      : 2.5px 6px;                                /* 上下左右內距 */
+            border       : var(--border-grid);                       /* 邊框顏色 */
+            border-radius: 6px;                                      /* 圓角弧度 */
+            font-size    : 12px;                                     /* 文字大小 */
+            cursor       : pointer;                                  /* 滑鼠點擊手勢 */
+            transition   : all 0.15s;                                /* 過渡動畫時間 */
+        }
+
+        .c-quick-crop-btn:hover {                                    /* 進階懸浮小特效 */
+            border-color: #ff0000;                                 /* 懸浮時邊框顏色 */
+            box-shadow  : 0 2px 4px rgba(0,0,0,0.08);              /* 懸浮時陰影 */
+            transform   : translateY(-3px);                          /* 懸浮時向上微移 */
+        }
+
         /* 依種子稀有度著色 */
         .c-q-btn-至臻 { background-color: #f0f4ff; color: #2563eb; border-color: #bfdbfe; }
         .c-q-btn-橙色 { background-color: #fffbeb; color: #ed7d31; border-color: #fde68a; }
@@ -232,38 +220,31 @@
         .c-q-btn-藍色 { background-color: #ecfeff; color: #00b0f0; border-color: #c5f6fa; }
         .c-q-btn-綠色 { background-color: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
         .c-q-btn-灰色 { background-color: #f8fafc; color: #7f7f7f; border-color: #e2e8f0; }
-        
-        /* 按鈕被選中時的「高亮狀態」 */
-        .c-quick-crop-btn.c-active {
-            background-color: #fef2f2;
-            color           : #ff0000;
-            border-color    : #ff0000;
-            box-shadow      : 0 2px 5px rgba(30, 58, 138, 0.4);
+
+        .c-quick-crop-btn.c-active {                                 /* 按鈕被選中時的「高亮狀態」 */
+            background-color: #fef2f2;                             /* 選中背景顏色 */
+            color           : #ff0000;                             /* 選中文字顏色 */
+            border-color    : #ff0000;                             /* 選中邊框顏色 */
+            box-shadow      : 2px 2px 5px rgba(30, 58, 138, 0.4);  /* 選中陰影顏色 */
         }
 
         /* ============================================================ */
-        /* 5. 功能性按鈕區                                               */
+        /* 區塊五：功能性按鈕區                                           */
         /* ============================================================ */
 
-        /* 第三排：功能按扭通用樣式 */
-        .c-btn {
-            padding      : 4px 8px;
-            border       : none;
-            border-radius: 4px;
-            font-size    : 13px;
-            cursor       : pointer;
-            transition   : all 0.2s;
-            display      : inline-flex;
-            align-items  : center;
-            gap          : 5px;
+        .c-btn {                                                               /* 第三排：功能按扭通用樣式 */
+            display      : flex;                                               /* 行內彈性排版 */
+            align-items  : center;                                             /* 同行垂直置中對齊 */
+            gap          : 3px;                                                /* 圖示與文字間距 */
+            padding      : 4px 10px;                                           /* 上下左右內距 */
+            border       : none;                                               /* 無邊框 */
+            border-radius: 6px;                                                /* 圓角弧度 */
+            font-size    : 14px;                                               /* 文字大小 */
+            cursor       : pointer;                                            /* 滑鼠點擊手勢 */
+            transition   : all 0.2s;                                           /* 過渡動畫時間 */
         }
-        .c-btn:hover {
-            opacity      : 0.7;
-        }
-        .c-btn:active {
-            transform    : scale(0.98);
-            box-shadow   : inset 0 2px 4px rgba(0, 0, 0, 0.15);
-        }
+        .c-btn:hover  { opacity  : 0.7; }                                      /* 懸浮時，按鈕透明程度 */
+        .c-btn:active { transform: scale(0.90); }                              /* 按下時，按鈕縮小動作 */
 
         /* 各功能按扭樣式 */
         .c-btn-paint          { background-color: #2563eb; color: white; } /* 塗鴉按鈕：關閉 */
@@ -282,23 +263,21 @@
         .c-btn-restore        { background-color: #4b5563; color: white; } /* 還原按鈕 */
         .c-btn-clear-all      { background-color: #ef4444; color: white; } /* 全清按鈕 */
 
-        /* 狀態標籤與互斥動畫 */
-        .c-status-tag {
-            font-size  : 13px;
-            color      : #059669;
-            display    : inline-flex;
-            align-items: center;
-            margin-left: 5px;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        .c-status-tag {                                                        /* 即時狀態標籤 */
+            display    : flex;                                                 /* 行內彈性排版 */
+            align-items: center;                                               /* 同行垂直置中對齊 */
+            margin-left: 5px;                                                  /* 左側外距 */
+            color      : #059669;                                            /* 文字顏色 */
+            font-size  : 12px;                                                 /* 文字大小 */
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);                      /* 文字輕微陰影 */
         }
 
-        /* 隱藏的檔案上傳控制項：確保完全不佔空間與隱形 */
-        .c-hidden-file-input {
-            display       : none;
-            width         : 0;
-            height        : 0;
-            opacity       : 0;
-            pointer-events: none;
+        .c-hidden-file-input {                                                 /* 隱藏的檔案上傳控制項：確保完全不佔空間與隱形 */
+            display       : none;                                              /* 隱藏不渲染 */
+            width         : 0;                                                 /* 寬度歸零 */
+            height        : 0;                                                 /* 高度歸零 */
+            opacity       : 0;                                                 /* 完全透明 */
+            pointer-events: none;                                              /* 停用滑鼠 */
         }
 
         /* 呼吸燈特效 */
@@ -306,433 +285,407 @@
         @keyframes pulse-copy { 0% { opacity: 1.0; } 50% { opacity: 0.6; } 100% { opacity: 1.0; } }
 
         /* ============================================================ */
-        /* 6. 核心佈局架構（三欄式主要版面）                              */
+        /* 區塊六：核心佈局架構（三欄式主要版面）                           */
         /* ============================================================ */
 
-        /* 主要區塊：預設為電腦寬螢幕三欄橫向佈局 */
-        .c-main-layout {
-            display              : grid;
-            grid-template-columns: 400px 1fr 400px;
-            justify-content      : center;
-            gap                  : 15px;
-            width                : 100%;
-            min-width            : 900px;
-            max-width            : 1850px;
-            align-items          : stretch; 
-            margin: 0 auto;
+        .c-main-layout {                                       /* 主要區塊：預設為電腦寬螢幕三欄橫向佈局 */
+            display              : grid;                       /* 網格排版 */
+            grid-template-columns: 400px 1fr 400px;            /* 設定左右固定 400px，中間自適應佔滿 */
+            justify-content      : center;                     /* 水平置中對齊 */
+            gap                  : 15px;                       /* 欄位間距 */
+        /*  width                : 100%;                       /* 寬度佔滿 100% → 暫時移除 */
+            min-width            : 900px;                      /* 最小總寬度 */
+            max-width            : 1850px;                     /* 最大總寬度 */
+            margin               : 0 auto;                     /* 整體水平置中 */
         }
-        
-        /* 當螢幕寬度小於 1400px 時（手機/平板），自動切換為直列單欄佈局 */
-        @media (max-width: 1399px) {
+
+        @media (max-width: 1399px) {                           /* 當螢幕寬度小於 1400px 時（手機/平板），自動切換為直列單欄佈局 */
             .c-main-layout {
-                grid-template-columns: 1fr;
-                max-width            : 100%;
+                grid-template-columns: 1fr;                    /* 切換為單一自適應欄位 */
+                max-width            : 100%;                   /* 最大寬度調整為 100% */
+                justify-items        : center;                 /* 子元素水平置中 */
+                align-items          : center;                 /* 子元素垂直置中 */
             }
         }
 
-        /* ============================================================ */
-        /* 7. 左右側邊欄與卡片容器基礎樣式                                 */
+        /* ============================================================ */ 
+        /* 區塊七：左右側邊欄與卡片容器基礎樣式                            */
         /* ============================================================ */
 
         /* 7.1 外層結構與卡片容器 */
+        .c-sidebar-left, .c-sidebar-right {                    /* [外框] 左右側邊欄：基礎垂直彈性佈局 */
+            display       : flex;                              /* 彈性排版 */
+            flex-direction: column;                            /* 垂直縱向排列 */
+        }
 
-        /* [外框] 左右側邊欄：基礎垂直彈性佈局 */
-        .c-sidebar-left, .c-sidebar-right {
-            display       : flex;
-            flex-direction: column;
+        .c-panel-content-card {                                /* [卡片] 側邊卡片：內容箱體白色容器外觀 */
+            display       : flex;                              /* 彈性排版 */
+            flex-direction: column;                            /* 垂直縱向排列 */
+            min-width     : 400px;                             /* 卡片最小寬度 */
+            max-width     : 500px;                             /* 卡片最大寬度 */
+            max-height    : 1800px;                            /* 卡片最大高度 */
+            padding       : 16px;                              /* 四周內距 */
+            background    : var(--bg-container);               /* 容器背景顏色 */
+            border        : var(--border-grid);                /* 實線邊框 */
+            border-radius : 12px;                              /* 圓角弧度 */
+            box-shadow    : 0 4px 10px rgba(0,0,0,0.05);     /* 懸浮卡片陰影 */
         }
-		
-        /* [卡片] 側邊卡片：內容箱體白色容器外觀 */
-        .c-panel-content-card {
-			background    : var(--bg-container);
-			padding       : 16px;
-			border-radius : 12px;
-			box-shadow    : 0 4px 10px rgba(0,0,0,0.05);
-			display       : flex;
-			flex-direction: column;
-			max-width     : 600px;
-            max-height    : 1800px;
-			border        : 1px solid #e2e8f0;
-		}
-        
-        /* [卡片頂部] 標題列樣式 */
-        .c-panel-title {
-            font-size    : 16px;
-            font-weight  : bold;
-            color        : #1e3a8a;
-            margin-bottom: 12px;
-            display      : flex;
-            align-items  : center;
-            gap          : 6px;
-            flex-shrink  : 0;
+
+        .c-panel-title {                                       /* [卡片頂部] 標題列樣式 */
+            display      : flex;                               /* 彈性排版 */
+            align-items  : center;                             /* 垂直置中對齊 */
+            flex-shrink  : 0;                                  /* 禁止擠壓收縮 */
+            gap          : 6px;                                /* 圖示與標題間距 */
+            margin-bottom: 12px;                               /* 下方外距 */
+            color        : #1e3a8a;                          /* 文字顏色 */
+            font-size    : 16px;                               /* 文字大小 */
+            font-weight  : bold;                               /* 文字粗體 */
         }
-        
-        /* [卡片次層] 頂部四格快訊數據儀表板 (左右側邊欄通用) */
-        .c-grid-summary-box, .c-bag-summary-box {
-            background           : #f8fafc;   
-            border               : 1px solid #e2e8f0;
-            border-radius        : 8px;
-            padding              : 10px;
-            margin-bottom        : 12px;
-            display              : grid;
-            grid-template-columns: 1fr 1fr;
-            gap                  : 8px;
-            font-size            : 14px;
-            flex-shrink          : 0;
+
+        .c-grid-summary-box, .c-bag-summary-box {              /* [卡片次層] 頂部四格快訊數據儀表板 (左右側邊欄通用) */
+            display              : grid;                       /* 網格排版 */
+            grid-template-columns: 1fr 1fr;                    /* 平均分為雙欄 */
+            flex-shrink          : 0;                          /* 禁止擠壓收縮 */
+            gap                  : 8px;                        /* 小卡片間距 */
+            padding              : 10px;                       /* 內距 */
+            margin-bottom        : 12px;                       /* 下方外距 */
+            background           : #f8fafc;                  /* 背景顏色 */
+            border               : var(--border-grid);         /* 實線邊框 */
+            border-radius        : 8px;                        /* 圓角弧度 */
+            font-size            : 14px;                       /* 文字大小 */
         }
 
         /* 數據儀表板：單一小卡片外觀 */
-        .c-summary-item  { display: flex; flex-direction: column; background: #ffffff; padding: 6px; border-radius: 4px; border: 1px solid #f1f5f9; }
-        .c-summary-label { color: #64748b; font-weight: 500; }
-        .c-summary-val   { font-size: 14px; font-weight: bold; color: #2563eb; margin-top: 2px; }
+        .c-summary-item  { display: flex; flex-direction: column; padding: 6px; background: #ffffff; border: var(--border-grid); border-radius: 8px; } /* 數據單格容器 */
+        .c-summary-label { color: #64748b; font-weight: 500; }                                    /* 數據標籤文字樣式 */
+        .c-summary-val   { margin-top: 2px; color: #2563eb; font-size: 14px; font-weight: bold; } /* 數據數值文字樣式 */
 
-        /* [卡片內部] 側邊卡片：滾動條獨立限制容器 */
-        .c-table-scroll-container {
-            flex         : 1;
-            overflow-y   : auto; 
-            padding-right: 2px;
+        .c-table-scroll-container {                            /* [卡片內部] 側邊卡片：滾動條獨立限制容器 */
+            overflow-y   : auto;                               /* 內容超長時顯示垂直滾動條 */
+            flex         : 1;                                  /* 自動佔滿剩餘高度 */
+            padding-right: 2px;                                /* 右側內距預留滾動條空間 */
         }
 
         /* 7.2 表格通用基底與特殊列 */
 
-        /* 左側庫存表格基底 */
-        .c-inventory-table {
-            width          : 100%;
-            border-collapse: collapse;
-            table-layout   : fixed ;
+        .c-inventory-table {                                   /* 左側庫存表格基底 */
+            width          : 100%;                             /* 寬度佔滿 100% */
+            border-collapse: collapse;                         /* 合併邊框 */
+            table-layout   : auto;                             /* 自動欄寬算法 */
         }
 
-        /* 右側統計表格基底 */
-        .c-stats-table {
-            width          : 100% ;
-            border-collapse: collapse;
-            table-layout   : auto ;
+        .c-stats-table {                                       /* 右側統計表格基底 */
+            width          : 100%;                             /* 寬度佔滿 100% */
+            border-collapse: collapse;                         /* 合併邊框 */
+            table-layout   : auto;                             /* 自動欄寬算法 */
+        }
+
+        .c-inventory-table th, .c-stats-table th {             /* 表格：頂部欄位標題 (th) */
+            position     : sticky;                             /* 捲動時凍結頂部 */
+            top          : 0;                                  /* 凍結頂部距離 */
+            z-index      : 10;                                 /* 避免被下方表格內容覆蓋 */
+            padding      : 6px 2px;                            /* 上下左右內距 */
+            background   : #f8fafc;                          /* 背景顏色 */
+            border-bottom: var(--border-grid);                 /* 底部實線邊框 */
+            color        : #64748b;                          /* 文字顏色 */
+            font-size    : 10px;                               /* 字型大小 */
+        }
+
+        .c-inventory-table td, .c-stats-table td {             /* 表格：資料格 (td) */
+            padding      : 4px 1px;                            /* 上下左右內距 */
+            border-bottom: 1px solid #f1f5f9;                /* 底部分隔實線邊框 */
+            font-size    : 10px;                               /* 字型大小 */
+            text-align   : center;                             /* 文字水平置中 */
+        }
+
+        .c-cat-row {                                           /* [特殊列] 系列大標題列 */
+            padding-left: 6px  !important;                     /* 強制左側縮排 */
+            background  : #f1f5f9;                           /* 背景顏色 */
+            color       : #475569;                           /* 文字顏色 */
+            font-weight : bold !important;                     /* 強制粗體 */
+            text-align  : left !important;                     /* 強制靠左對齊 */
         }
         
-        /* 表格：頂部欄位標題 (th) */
-        .c-inventory-table th, .c-stats-table th {
-            background   : #f8fafc;
-            position     : sticky;
-            top          : 0;
-            z-index      : 10;
-            padding      : 6px 2px;
-            border-bottom: 2px solid #e2e8f0;
-            color        : #64748b;
-            font-size    : 10px;
-        }
-        
-        /* 表格：資料格 (td) */
-        .c-inventory-table td, .c-stats-table td {
-            padding      : 4px 1px;
-            border-bottom: 1px solid #f1f5f9;
-            text-align   : center;
-            font-size    : 10px;
-        }
-        
-        /* [特殊列] 系列大標題列 */
-        .c-cat-row {
-            background  : #f1f5f9;
-            font-weight : bold !important;
-            text-align  : left !important;
-            padding-left: 6px  !important;
-            color       : #475569;
-        }
-        
-        /* [特殊列] 系列小計列 */
-        .c-cat-sum-row {
-            background : #fff1f2;
-            font-weight: bold !important;
-            color      : #e11d48;
+        .c-cat-sum-row {                                       /* [特殊列] 系列小計列 */
+            background : #fff1f2;                            /* 背景顏色 */
+            color      : #e11d48;                            /* 文字顏色 */
+            font-weight: bold !important;                      /* 強制粗體 */
         }
 
         /* 7.3 左側「背包庫存」內部元件 */
         
-        /* 背包全場總計列 */
-        .c-global-inv-sum-row {
-            background : #e0f2fe;
-            font-weight: bold !important;
-            color      : #0369a1;
+        .c-global-inv-sum-row {                                /* 背包全場總計列 */
+            background : #e0f2fe;                            /* 背景顏色 */
+            color      : #0369a1;                            /* 文字顏色 */
+            font-weight: bold !important;                      /* 強制粗體 */
         }
 
-        /* 可點選之作物文字 (第一欄) */
-        .c-clickable-crop {
-            cursor     : pointer;
-            font-weight: bold;
+        .c-clickable-crop {                                    /* 可點選之作物文字 (第一欄) */
+            font-weight: bold;                                 /* 文字粗體 */
+            cursor     : pointer;                              /* 滑鼠點擊手勢 */
         }
         .c-clickable-crop:hover {
-            background-color: #ffffcc;
-            text-decoration : underline;
+            background-color: #ffffcc;                       /* 懸浮時亮黃底色 */
+            text-decoration : underline;                       /* 懸浮時顯示下劃線 */
+            font-size       : 12px;                            /* 字型放大 */
         }
 
-        /* 背包靜態唯讀欄位 (第二、三欄：重量、價格) */
-        .c-inv-static-input {
-            background    : transparent;
-            border        : none;
-            text-align    : center;
-            color         : #555;
-            pointer-events: none;
+        .c-inv-static-input {                                  /* 背包靜態唯讀欄位 (第二、三欄：重量、價格) */
             width         : 100%;
-            font-size     : 10px;
+            background    : transparent;                       /* 透明背景 */
+            border        : none;                              /* 無邊框 */
+            color         : #000000;                         /* 文字顏色 */
+            font-size     : 10px;                              /* 字型大小 */
+            text-align    : center;                            /* 文字水平置中 */
+            pointer-events: none;                              /* 停用滑鼠點擊與選取 */
         }
 
-        /* 背包數字輸入框 (第四~六欄：普、異、幻) */
-        .c-inv-input {
-            width          : 100%;
-            padding        : 3px 0px !important;
-            text-align     : center;
-            border         : 1px solid #cbd5e1;
-            border-radius  : 4px;
-            font-size      : 10px !important;
-            box-sizing     : border-box !important;
-            -moz-appearance: textfield;
-            appearance     : textfield;
+        .c-inv-input {                                         /* 背包數字輸入框 (第四~六欄：普、異、幻) */
+            box-sizing     : border-box !important;            /* 強制邊框尺寸計算方式 */
+            width          : 100%;                             /* 寬度佔滿單元格 */
+            padding        : 3px 0px !important;               /* 上下內距 */
+            border         : var(--border-grid);               /* 實線邊框 */
+            border-radius  : 4px;                              /* 圓角弧度 */
+            text-align     : center;                           /* 文字置中 */
+            font-size      : 10px !important;                  /* 字型大小 */
+            -moz-appearance: textfield;                        /* 移除 Firefox 數字輸入框箭頭 */
+            appearance     : textfield;                        /* 移除標準數字輸入框箭頭 */
         }
         .c-inv-input::-webkit-outer-spin-button,
-        .c-inv-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-        .c-inv-input::placeholder               { color: #94a3b8; font-weight: normal; }
+        .c-inv-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }   /* 隱藏 Webkit 數字微調箭頭 */
+        .c-inv-input::placeholder               { color: #94a3b8; font-weight: normal; } /* 輸入框占位字元樣式 */
 
-        /* 單列總計唯讀顯示格 (第七欄：總) */
-        .c-inv-total-display {
-            background    : #fff5f5 !important;
-            color         : #e11d48 !important;
-            font-weight   : bold !important;    
-            text-align    : center;
-            border        : none !important;
-            font-size     : 10px;
+        .c-inv-total-display {                                 /* 單列總計唯讀顯示格 (第七欄：總) */
+            background    : #fff5f5 !important;              /* 背景顏色 */
+            border        : none !important;                   /* 無邊框 */
+            color         : #e11d48 !important;              /* 文字顏色 */
+            font-size     : 10px;                              /* 字型大小 */  
+            text-align    : center;                            /* 文字置中 */
         }
 
         /* 背包文字縮排輔助類別 */
-        .c-text-indent-sm { text-align: left !important; padding-left:  4px !important; }
-        .c-text-indent-lg { text-align: left !important; padding-left: 20px !important; }
+        .c-text-indent-sm { padding-left:  4px !important; text-align: left !important; }  /* 小縮排靠左 */
+        .c-text-indent-lg { padding-left: 20px !important; text-align: left !important; }  /* 大縮排靠左 */
 
         /* 7.4 右側「田間統計」內部元件 */
 
         /* 表格最上方「全部田間總計」列 */
-        .c-total-type-row { background: #eff6ff !important; font-weight: bold; color: #1e40af; }
 
-        /* 滑鼠懸停互動高亮列 */
-        .c-stats-table tr.c-highlighted-row {
-            background-color: #ffedd5;
-            outline         : 2px solid #f97316;
-            z-index         : 5;
+        .c-total-type-row {                                    /* 田間總計列 */
+            background : #e0f2fe;                            /* 背景顏色 */
+            color      : #0369a1;                            /* 文字顏色 */
+            font-weight: bold !important;                      /* 強制粗體 */
         }
 
-        /* 錯誤系列標題與小計列 (警示度提升) */
-        .c-cat-row-error {
-            background  : #f87171 !important;
-            color       : #ffffff !important;
-            font-weight : bold !important;
-            text-align  : left !important;
-            padding-left: 6px !important;
+        .c-stats-table tr.c-highlighted-row {                  /* 滑鼠懸停互動高亮列 */
+            z-index         : 5;                               /* 提升層級 */
+            background-color: #ffedd5;                       /* 亮橘背景 */
+            outline         : 2px solid #f97316;             /* 外圍橘色粗邊框 */
+        }
+
+        .c-cat-row-error {                                     /* 錯誤系列標題與小計列 (警示度提升) */
+            padding-left: 6px !important;                      /* 左側內距 */
+            background  : #f87171 !important;                /* 警示背景 */
+            color       : #ffffff !important;                /* 白色文字 */
+            font-weight : bold !important;                     /* 強制粗體 */
+            text-align  : left !important;                     /* 靠左對齊 */
         }
         .c-cat-sum-row-error {
-            background : #fef2f2 !important;
-            font-weight: bold !important;
-            color      : #dc2626 !important;
+            background : #fef2f2 !important;                 /* 淡紅背景 */
+            color      : #dc2626 !important;                 /* 深紅文字 */
+            font-weight: bold !important;                      /* 強制粗體 */
         }
         
         /* 統計資料細節排版與色彩 */
-        .c-stat-text-left  { text-align: left !important; padding-left: 6px !important; }
-        .c-stat-head-title { color: #1e40af; font-weight: bold; text-align: left; padding-left: 4px; }
-        .c-stat-text-danger{ color: #b91c1c; font-weight: bold; }
+        .c-stat-text-left     { padding-left: 6px !important; text-align: left !important; }                  /* 明細項目靠左 */
+        
+        .c-stat-text-danger   { color: #b91c1c; font-weight: bold; }                                        /* 警告性紅字強調 */
 
-        .c-stat-bg-total      { background: #dbeafe; color: #1e40af; font-weight: bold; }
-        .c-stat-bg-fruit      { background: #ffe4e6; color: #b91c1c; font-weight: bold; }
-        .c-stat-bg-sub        { background: #f8fafc; font-weight: bold; }
-        .c-stat-bg-item-fruit { background: #fff5f5; color: #e11d48; font-weight: bold; }
+        .c-stat-bg-total      { background: #dbeafe; color: #1e40af; font-weight: bold; }                 /* 總計格背景 */
+        .c-stat-bg-fruit      { background: #ffe4e6; color: #b91c1c; font-weight: bold; }                 /* 果實數總計格背景 */
+        .c-stat-bg-sub        { background: #f8fafc; font-weight: bold; }                                   /* 小計格背景 */
+        .c-stat-bg-item-fruit { background: #fff5f5; color: #e11d48; font-weight: bold; }                 /* 單項果實數背景 */
 
-        .c-stat-item-row { cursor: pointer; }
-        .c-no-data-msg   { color: #94a3b8; padding: 20px 0; text-align: center; }
+        .c-stat-item-row { cursor: pointer; }                                                                 /* 明細列點擊手勢 */
+        .c-no-data-msg   { padding: 20px 0; color: #94a3b8; text-align: center; }                           /* 無資料提示訊息 */
         
         /* ============================================================ */
-        /* 8. 中間地圖區欄位佈局（Map Wrapper / Container）               */
+        /* 區塊八：中間地圖區欄位佈局（Map Wrapper / Container）           */
         /* ============================================================ */
 
-        /* 地圖外包裝白色大外箱 */
-        .c-map-wrapper {
-            background     : var(--bg-container);
-            padding        : 16px;
-            border-radius  : 12px;
-            box-shadow     : 0 4px 10px rgba(0,0,0,0.05);
-            display        : flex;
-            flex-direction : column;
-            justify-content: center;
-            align-items    : center;
-            border         : 1px solid #e2e8f0;
+        .c-map-wrapper {                                                   /* 地圖外包裝白色大外箱 */
+            display        : flex;                                         /* 彈性排版 */
+            flex-direction : column;                                       /* 垂直縱向排列 */
+            justify-content: center;                                       /* 內容水平置中 */
+            align-items    : center;                                       /* 內容垂直置中 */
+            padding        : 16px;                                         /* 內距 */
+            background     : var(--bg-container);                          /* 背景顏色 */
+            border         : var(--border-grid);                           /* 實線邊框 */
+            border-radius  : 12px;                                         /* 圓角弧度 */
+            box-shadow     : 0 4px 10px rgba(5, 1, 1, 0.05);             /* 卡片陰影 */
         }
 
-        /* 地圖主容器：2x4 區域網格分佈 */
-        .c-map-container {
-            display              : grid;
-            grid-template-columns: repeat(2, auto);
-            gap                  : 20px 30px;
-            justify-content      : center;
-            padding              : 10px;
+        .c-map-container {                                                 /* 地圖主容器：2x4 區域網格分佈 */
+            display              : grid;                                   /* 網格排版 */
+            grid-template-columns: repeat(2, auto);                        /* 雙欄自適應寬度 */
+            justify-content      : center;                                 /* 網格整體置中 */
+            gap                  : 20px 30px;                              /* 上下左右區域間距 */
+            padding              : 10px;                                   /* 內距 */
         }
 
-        /* 單個區域容器（含標題與 10x10 地圖） */
-        .c-zone { 
-            display       : flex; 
-            flex-direction: column; 
-            position      : relative;
+        .c-zone {                                                          /* 單個區域容器（含標題與 10x10 地圖） */
+            position      : relative;                                      /* 相對定位 */
+            display       : flex;                                          /* 彈性排版 */
+            flex-direction: column;                                        /* 垂直縱向排列 */
         }
         
-        /* 區域上方小灰色標題列 */
-        .c-zone-title {
-            font-size    : 13px;
-            font-weight  : bold;
-            color        : #475569;
-            margin-bottom: 5px;
-            text-align   : center;
-            background   : #e2e8f0;
-            border-radius: 4px;
-            padding      : 2px 0;
-            transition   : all 0.2s;
+        .c-zone-title {                                                    /* 區域上方小灰色標題列 */
+            margin-bottom: 5px;                                            /* 下方外距 */
+            padding      : 2px 0;                                          /* 上下內距 */
+            background   : #e2e8f0;                                      /* 背景顏色 */
+            border-radius: 4px;                                            /* 圓角弧度 */
+            color        : #475569;                                      /* 文字顏色 */
+            font-size    : 13px;                                           /* 字型大小 */
+            font-weight  : bold;                                           /* 文字粗體 */
+            text-align   : center;                                         /* 水平置中 */
+            transition   : all 0.2s;                                       /* 過渡動畫時間 */
         }
 
         /* 交換模式開啟時，標題顯示為可點擊游標 */
-        body.is-move-mode .c-zone-title       { cursor: pointer;}
-        body.is-move-mode .c-zone-title:hover { background: #cbd5e1; }
+        body.is-move-mode .c-zone-title       { cursor: pointer;}          /* 換成點擊手勢 */
+        body.is-move-mode .c-zone-title:hover { background: #cbd5e1; }   /* 懸浮深色 */
 
-        /* 批次交換待選中起點田地的發光樣式 */
-        .c-zone-title.c-zone-pending-source {
-            outline         : 0.5px dashed #d97706 ;
-            background-color: #fef3c7 ;
-            color           : #b45309 ;
+        .c-zone-title.c-zone-pending-source {                              /* 批次交換待選中起點田地的發光樣式 */
+            background-color: #fef3c7 ;                                  /* 淡黃色背景 */
+            outline         : 0.5px dashed #d97706;                      /* 橘黃虛線框 */
+            color           : #b45309;                                   /* 文字顏色 */
         }
 
-        /* 核心 10x10 網格：含最外圍座標軸（8x8田地 + 四週座標） */
-        .c-grid-10x10 {
-            display              : grid;
-            grid-template-columns: 24px repeat(8, 42px) 24px;
-            grid-template-rows   : 24px repeat(8, 42px) 24px;
-            border               : 2px solid var(--accent-blue);
-            background           : #ffffff;
-            position             : relative;
+        .c-grid-10x10 {                                                    /* 核心 10x10 網格：含最外圍座標軸（8x8田地 + 四週座標） */
+            position             : relative;                               /* 相對定位 */
+            display              : grid;                                   /* 網格排版 */
+            grid-template-columns: 24px repeat(8, 42px) 24px;              /* 兩側 24px 軸 + 中間 8 格 42px */
+            grid-template-rows   : 24px repeat(8, 42px) 24px;              /* 上下 24px 軸 + 中間 8 格 42px */
+            background           : #ffffff;                              /* 背景純白 */
+            border               : 2px solid var(--accent-blue);           /* 網格大邊框 */
         }
 
-        /* 邊緣座標軸文字樣式 */
-        .c-axis-label {
-            display         : flex;
-            justify-content : center;
-            align-items     : center;
-            font-size       : 10px;
-            font-weight     : bold;
-            color           : #64748b;
-            background-color: #f1f5f9;
-            user-select     : none;
-            transition      : all 0.15s;
+        .c-axis-label {                                                    /* 邊緣座標軸文字樣式 */
+            display         : flex;                                        /* 彈性排版 */
+            justify-content : center;                                      /* 水平置中 */
+            align-items     : center;                                      /* 垂直置中 */
+            background-color: #f1f5f9;                                   /* 座標軸背景色 */
+            color           : #64748b;                                   /* 座標文字顏色 */
+            font-size       : 10px;                                        /* 字型大小 */
+            font-weight     : bold;                                        /* 文字粗體 */
+            user-select     : none;                                        /* 禁止文字選取 */
+            transition      : all 0.15s;                                   /* 過渡動畫時間 */
         }
         
-        /* 座標軸最外圍四個死角空白格 */
-        .c-axis-empty { background-color: #e2e8f0; }
+        .c-axis-empty { background-color: #e2e8f0; }                     /* 座標軸最外圍四個死角空白格 */
 
-        /* 滑鼠懸停於地圖時，對應十字坐標軸的高亮效果 */
-        .c-axis-label.c-axis-highlighted {
-            background-color: #ffedd5 ;
-            color           : #ea580c ;
-            font-size       : 10px      ;
-            text-shadow     : 0px 0px 1px rgba(234, 88, 12, 0.4);
+        .c-axis-label.c-axis-highlighted {                                 /* 滑鼠懸停於地圖時，對應十字坐標軸的高亮效果 */
+            background-color: #ffedd5 ;                                  /* 高亮底色 */
+            color           : #ea580c;                                   /* 高亮字色 */
+            font-size       : 10px;                                        /* 字型大小 */
+            text-shadow     : 0px 0px 1px rgba(234, 88, 12, 0.4);        /* 文字發光微陰影 */
         }
 
-        /* 地圖核心單一格耕地（土地）樣式 */
-        .c-cell {
-            width           : 42px;
-            height          : 42px;
-            border          : 1px solid var(--grid-line);
-            display         : flex;
-            flex-direction  : column;
-            justify-content : center;
-            align-items     : center;
-            cursor          : pointer;
-            position        : relative;
-            background-color: #ffffff;
-            overflow        : hidden;
+        .c-cell {                                                          /* 地圖核心單一格耕地（土地）樣式 */
+            position        : relative;                                    /* 相對定位 */
+            display         : flex;                                        /* 彈性排版 */
+            flex-direction  : column;                                      /* 垂直縱向排列 */
+            justify-content : center;                                      /* 水平置中 */
+            align-items     : center;                                      /* 垂直置中 */
+            width           : 42px;                                        /* 格子固定寬度 */
+            height          : 42px;                                        /* 格子固定高度 */
+            background-color: #ffffff;                                   /* 格子預設底色 */
+            border          : 1px solid var(--grid-line);                  /* 格子網格線邊框 */
+            overflow        : hidden;                                      /* 超出邊界內容隱藏 */
+            cursor          : pointer;                                     /* 滑鼠點擊手勢 */
         }
-        .c-cell:hover { outline: 0.5px solid #3b82f6; z-index: 10; }
+        .c-cell:hover { outline: 0.5px solid #3b82f6; z-index: 10; }     /* 滑鼠懸浮時的藍色輪廓邊框 */
         
-        /* 點選統計面板特定作物時，地圖中同種作物全場「集體發光」特效 */
-        .c-cell.c-crop-highlight-active {
-            outline   : 0.5px dashed #f97316 !important;
-            z-index   : 12;
-            box-shadow: 0 0 8px rgba(249, 115, 22, 0.6);
+        .c-cell.c-crop-highlight-active {                                  /* 點選統計面板特定作物時，地圖中同種作物全場「集體發光」特效 */
+            z-index   : 12;                                                /* 提升層級 */
+            outline   : 0.5px dashed #f97316 !important;                 /* 橘色虛線框 */
+            box-shadow: 0 0 8px rgba(249, 115, 22, 0.6);                 /* 橘色發光光暈 */
         }
 
-        /* 🔄 交換模式下，被點選的第一格「待搬移起點」虛線框與亮黃底特效 */
-        .c-cell.c-move-pending-source {
-            outline         : 1.5px dashed #d97706 !important;
-            background-color: #ffffcc !important;
-            z-index         : 15;
+        .c-cell.c-move-pending-source {                                    /* 🔄 交換模式下，被點選的第一格「待搬移起點」虛線框與亮黃底特效 */
+            z-index         : 15;                                          /* 提升最高層級 */
+            background-color: #ffffcc !important;                        /* 亮黃背景 */
+            outline         : 1.5px dashed #d97706 !important;           /* 粗橘黃虛線外框 */
         }
 
-        /* 📋 複製模式下，被點選的第一格「待複製源」紫色虛線框與淡紫底特效 */
-        .c-cell.c-copy-pending-source {
-            outline         : 1.5px dashed #7c3aed !important;
-            background-color: #f3e8ff !important;            
-            z-index         : 15;                            
+        .c-cell.c-copy-pending-source {                                    /* 📋 複製模式下，被點選的第一格「待複製源」紫色虛線框與淡紫底特效 */
+            z-index         : 15;                                          /* 提升最高層級 */
+            background-color: #f3e8ff !important;                        /* 淡紫背景 */
+            outline         : 1.5px dashed #7c3aed !important;           /* 粗紫色虛線外框 */
         }
 
-        /* 田間文字：上方作物簡稱 */
-        .c-cell .c-crop-text { 
-            font-size    : 13px; 
-            font-weight  : bold;
-            line-height  : 1.2; 
-            text-align   : center; 
-            z-index      : 2; 
-            margin-bottom: 2px;
+        .c-cell .c-crop-text {                                             /* 田間文字：上方作物簡稱 */
+            z-index      : 2;                                              /* 確保顯示在背景之上 */
+            margin-bottom: 2px;                                            /* 下方外距 */
+            font-size    : 13px;                                           /* 作物簡稱字型大小 */
+            font-weight  : bold;                                           /* 文字粗體 */
+            line-height  : 1.2;                                            /* 行高比例 */
+            text-align   : center;                                         /* 水平置中 */
         }
         
-        /* 田間文字：下方型態＋果實數量 */
-        .c-cell .c-level-text { 
-            font-size  : 11px;
-            font-weight: bold;
-            line-height: 1.2;
-            text-align : center;
-            z-index    : 2; 
+        .c-cell .c-level-text {                                            /* 田間文字：下方型態＋果實數量 */
+            z-index    : 2;                                                /* 確保顯示在背景之上 */
+            font-size  : 11px;                                             /* 型態與數量字型大小 */
+            font-weight: bold;                                             /* 文字粗體 */
+            line-height: 1.2;                                              /* 行高比例 */
+            text-align : center;                                           /* 水平置中 */
         }
 
         /* 作物文字及背景顏色定義 */
-        .t-至臻 { color: #2563eb; }
-        .t-橙色 { color: #ed7d31; }
-        .t-紫色 { color: #a855f7; }
-        .t-藍色 { color: #00b0f0; }
-        .t-綠色 { color: #16a34a; }
-        .t-灰色 { color: #7f7f7f; }
-        .t-錯誤 { color: #dc2626; }
+        .t-至臻       { color: #2563eb; }
+        .t-橙色       { color: #ed7d31; }
+        .t-紫色       { color: #a855f7; }
+        .t-藍色       { color: #00b0f0; }
+        .t-綠色       { color: #16a34a; }
+        .t-灰色       { color: #7f7f7f; }
+        .t-錯誤       { color: #dc2626; }
 
-        .bg-cat-橙色 { background-color: #fffbeb; }
-        .bg-cat-紫色 { background-color: #faf5ff; }
-        .bg-cat-藍色 { background-color: #ecfeff; }
-        .bg-cat-綠色 { background-color: #f0fdf4; }
-        .bg-cat-灰色 { background-color: #f8fafc; }
-        .bg-cat-錯誤 { background-color: #ffe4e6; }
+        .bg-cat-橙色  { background-color: #fffbeb; }
+        .bg-cat-紫色  { background-color: #faf5ff; }
+        .bg-cat-藍色  { background-color: #ecfeff; }
+        .bg-cat-綠色  { background-color: #f0fdf4; }
+        .bg-cat-灰色  { background-color: #f8fafc; }
+        .bg-cat-錯誤  { background-color: #ffe4e6; }
 
         /* 至臻系列作物專屬獨立半透明底色 */
-        .bg-crop-大王 { background-color: rgba(254, 240, 138, 0.60); } 
-        .bg-crop-葵花 { background-color: rgba(253, 224, 071, 0.60); }  
-        .bg-crop-松樹 { background-color: rgba(187, 247, 208, 0.60); }  
-        .bg-crop-仙象 { background-color: rgba(134, 239, 172, 0.55); }  
-        .bg-crop-奇菇 { background-color: rgba(253, 186, 116, 0.55); }  
-        .bg-crop-蟠桃 { background-color: rgba(254, 205, 211, 0.60); }  
-        .bg-crop-葡萄 { background-color: rgba(233, 213, 255, 0.65); }  
-        .bg-crop-天椒 { background-color: rgba(252, 165, 165, 0.55); }  
-        .bg-crop-彼岸 { background-color: rgba(254, 163, 180, 0.55); }  
-        .bg-crop-幻月 { background-color: rgba(214, 211, 242, 0.65); }  
-        .bg-crop-龍狗 { background-color: rgba(244, 114, 182, 0.50); }   
-        .bg-crop-紅包 { background-color: rgba(248, 113, 113, 0.50); }   
-        .bg-crop-蘆薈 { background-color: rgba(201, 230, 133, 0.60); }  
-        .bg-crop-月蟾 { background-color: rgba(176, 196, 222, 0.60); }  
-        .bg-crop-月兔 { background-color: rgba(226, 232, 240, 0.65); }  
-        .bg-crop-梅樹 { background-color: rgba(244, 182, 214, 0.55); }  
-        .bg-crop-星玫 { background-color: rgba(147, 197, 253, 0.60); }
-        .bg-crop-蹄蓮 { background-color: rgba(238, 242, 247, 0.70); }
-        .bg-crop-幽幽 { background-color: rgba(222, 242, 245, 0.70); }
-        .bg-crop-舞拉 { background-color: rgba(244, 182, 214, 0.60); }
+        .bg-crop-大王 { background-color: rgba(234, 179,   8, 0.20); }  /* 金黃 */
+        .bg-crop-葵花 { background-color: rgba(250, 204,  21, 0.20); }  /* 明黃 */
+        .bg-crop-松樹 { background-color: rgba( 34, 197,  94, 0.20); }  /* 翠綠 */
+        .bg-crop-仙象 { background-color: rgba( 16, 185, 129, 0.20); }  /* 翡翠綠 */
+        .bg-crop-奇菇 { background-color: rgba(249, 115,  22, 0.20); }  /* 亮橙 */
+        .bg-crop-蟠桃 { background-color: rgba(251, 113, 133, 0.20); }  /* 粉紅 */
+        .bg-crop-葡萄 { background-color: rgba(168,  85, 247, 0.20); }  /* 紫羅蘭 */
+        .bg-crop-天椒 { background-color: rgba(239,  68,  68, 0.20); }  /* 鮮紅 */
+        .bg-crop-彼岸 { background-color: rgba(225 , 29,  72, 0.20); }  /* 深紅玫瑰 */
+        .bg-crop-幻月 { background-color: rgba(129, 140, 248, 0.20); }  /* 靛藍月光藍 */
+        .bg-crop-龍狗 { background-color: rgba(244,  63,  94, 0.20); }  /* 火紅粉 */
+        .bg-crop-紅包 { background-color: rgba(220,  38,  38, 0.20); }  /* 節慶紅 */
+        .bg-crop-蘆薈 { background-color: rgba(132, 204,  22, 0.20); }  /* 嫩綠檸檬綠 */
+        .bg-crop-月蟾 { background-color: rgba(100, 116, 139, 0.20); }  /* 藍灰月灰 */
+        .bg-crop-月兔 { background-color: rgba(203, 213, 225, 0.20); }  /* 柔和銀白 */
+        .bg-crop-梅樹 { background-color: rgba(236,  72, 153, 0.20); }  /* 玫紅 */
+        .bg-crop-星玫 { background-color: rgba( 56, 189, 248, 0.20); }  /* 星空天藍 */
+        .bg-crop-蹄蓮 { background-color: rgba(241, 245, 249, 0.20); }  /* 馬蹄純白 */
+        .bg-crop-幽幽 { background-color: rgba( 20, 184, 166, 0.20); }  /* 幽藍蒂芬妮綠 */
+        .bg-crop-舞拉 { background-color: rgba( 71,  55,  86, 0.20); }  /* 舞動夢幻紫 */
+        .bg-crop-水仙 { background-color: rgba( 56, 189, 248, 0.20); }  /* 秋水湖藍 */
         
         /* 進階特殊型態之數字與字體加粗強調樣式 */
         .t-style-異 .c-level-text { color: #00b050; font-size: 11px; font-weight: bold; }
         .t-style-幻 .c-level-text { color: #00b0f0; font-size: 11px; font-weight: bold; }
         .t-style-巨 .c-level-text { color: #ff0000; font-size: 11px; font-weight: bold; }
+        .t-style-銀 .c-level-text { color: #71717a; font-size: 11px; font-weight: bold; }
+        .t-style-金 .c-level-text { color: #eab308; font-size: 11px; font-weight: bold; }
         .t-style-晶 .c-level-text { color: #2563eb; font-size: 11px; font-weight: bold; }
         
         .bg-style-流 { 
@@ -748,87 +701,81 @@
         .t-style-星 .c-level-text { color: #ed7d31; font-size: 11px; font-weight: bold;}
 
         /* ============================================================ */
-        /* 9. 自訂清除快選單 modal 彈出視窗                               */
+        /* 區塊九：自訂清除快選單 modal 彈出視窗                           */
         /* ============================================================ */
         .c-modal-overlay {
-            position       : fixed;
-            top            : 0; left: 0; right: 0; bottom: 0;
-            background     : rgba(0, 0, 0, 0.4);
-            display        : flex;
-            justify-content: center;
-            align-items    : center;
-            z-index        : 3000;
-            opacity        : 0;
-            visibility     : hidden;
-            transition     : all 0.2s ease;
+            position       : fixed;                                    /* 固定全螢幕定位 */
+            top            : 0; left: 0; right: 0; bottom: 0;          /* 鋪滿視窗上下左右 */
+            z-index        : 3000;                                     /* 設定最高視窗圖層 */
+            display        : flex;                                     /* 彈性排版 */
+            justify-content: center;                                   /* 水平置中 */
+            align-items    : center;                                   /* 垂直置中 */
+            background     : rgba(0, 0, 0, 0.4);                     /* 黑色半透明遮罩 */
+            opacity        : 0;                                        /* 預設完全透明 */
+            visibility     : hidden;                                   /* 預設不可見 */
+            transition     : all 0.2s ease;                            /* 淡入淡出過渡動畫 */
         }
         .c-modal-overlay.c-modal-open {
-            opacity   : 1;
-            visibility: visible;
+            opacity   : 1;                                             /* 開啟時不透明 */
+            visibility: visible;                                       /* 開啟時可見 */
         }
         .c-modal-box {
-            background    : #ffffff;
-            width         : 320px;
-            border-radius : 12px;
-            padding       : 20px;
-            box-shadow    : 0 10px 25px rgba(0, 0, 0, 0.15);
-            display       : flex;
-            flex-direction: column;
-            gap           : 15px;
+            display       : flex;                                      /* 彈性排版 */
+            flex-direction: column;                                    /* 垂直縱向排列 */
+            gap           : 15px;                                      /* 元件間距 */
+            width         : 320px;                                     /* 視窗固定寬度 */
+            padding       : 20px;                                      /* 內距 */
+            background    : #ffffff;                                 /* 彈窗背景白底 */
+            border-radius : 12px;                                      /* 圓角弧度 */
+            box-shadow    : 0 10px 25px rgba(0, 0, 0, 0.15);         /* 立體懸浮陰影 */
         }
         .c-modal-title {
-            font-size     : 16px;
-            font-weight   : bold;
-            color         : #1e3a8a;
-            text-align    : center;
-            border-bottom : 1px solid #e2e8f0;
-            padding-bottom: 10px;
+            padding-bottom: 10px;                                      /* 下方內距 */
+            border-bottom : var(--border-grid);                        /* 底部分隔實線 */
+            color         : #1e3a8a;                                 /* 文字顏色 */
+            font-size     : 16px;                                      /* 字型大小 */
+            font-weight   : bold;                                      /* 文字粗體 */
+            text-align    : center;                                    /* 水平置中 */
         }
         .c-modal-options {
-            display       : flex;
-            flex-direction: column;
-            gap           : 10px;
+            display       : flex;                                      /* 彈性排版 */
+            flex-direction: column;                                    /* 垂直縱向排列 */
+            gap           : 10px;                                      /* 選項間距 */
         }
         .c-modal-option-label {
-            display      : flex;
-            align-items  : center;
-            gap          : 8px;
-            padding      : 8px 12px;
-            border       : 1px solid #cbd5e1;
-            border-radius: 8px;
-            cursor       : pointer;
-            font-size    : 14px;
-            transition   : all 0.15s;
+            display      : flex;                                       /* 彈性排版 */
+            align-items  : center;                                     /* 垂直置中對齊 */
+            gap          : 8px;                                        /* 單選框與文字間距 */
+            padding      : 8px 12px;                                   /* 內距 */
+            border       : var(--border-grid);                         /* 實線邊框 */
+            border-radius: 8px;                                        /* 圓角弧度 */
+            font-size    : 14px;                                       /* 字型大小 */
+            cursor       : pointer;                                    /* 滑鼠點擊手勢 */
+            transition   : all 0.15s;                                  /* 過渡動畫時間 */
         }
-        .c-modal-option-label:hover { background-color: #f1f5f9; }
+        .c-modal-option-label:hover { background-color: #f1f5f9; }   /* 懸浮底色 */
         .c-modal-option-label input[type="radio"]:checked + span {
-            font-weight: bold;
-            color      : #ef4444;
+            color      : #ef4444;                                    /* 選中時文字顏色 */
+            font-weight: bold;                                         /* 選中時文字加粗 */
         }
         .c-modal-actions {
-            display        : flex;
-            justify-content: flex-end;
-            gap            : 10px;
-            margin-top     : 5px;
+            display        : flex;                                     /* 彈性排版 */
+            justify-content: flex-end;                                 /* 按鈕靠右對齊 */
+            gap            : 10px;                                     /* 按鈕橫向間距 */
+            margin-top     : 5px;                                      /* 上方外距 */
         }
         .c-modal-btn {
-            padding      : 6px 16px;
-            border-radius: 6px;
-            font-size    : 13px;
-            cursor       : pointer;
-            border       : none;
-            transition   : all 0.15s;
+            padding      : 6px 16px;                                   /* 上下左右內距 */
+            border       : none;                                       /* 無邊框 */
+            border-radius: 6px;                                        /* 圓角弧度 */
+            font-size    : 13px;                                       /* 字型大小 */
+            cursor       : pointer;                                    /* 滑鼠點擊手勢 */
+            transition   : all 0.15s;                                  /* 過渡動畫時間 */
         }
-        .c-modal-btn-cancel {
-            background-color: #e2e8f0;
-            color           : #475569;
-        }
-        .c-modal-btn-cancel:hover { background-color: #cbd5e1; }
-        .c-modal-btn-confirm {
-            background-color: #ef4444;
-            color           : white;
-        }
-        .c-modal-btn-confirm:hover { background-color: #dc2626; }
+        .c-modal-btn-cancel        { background-color: #e2e8f0; color : #475569; }     /* 取消按鈕配色 */
+        .c-modal-btn-cancel:hover  { background-color: #cbd5e1; }                        /* 取消按鈕懸浮 */
+        .c-modal-btn-confirm       { background-color: #ef4444; color : #ffffff; }     /* 確定按鈕配色 */
+        .c-modal-btn-confirm:hover { background-color: #dc2626; }                        /* 確定按鈕懸浮 */
 
     </style>
 </head>
@@ -846,7 +793,7 @@
                     <span>清除背包庫存</span>
                 </label>
                 <label class="c-modal-option-label">
-                    <input type="radio" name="clearOption" value="map">
+                    <input type="radio" name="clearOption" value="map"> 
                     <span>清除田間作物</span>
                 </label>
                 <label class="c-modal-option-label">
@@ -871,19 +818,27 @@
 
                 <div class="c-control-group">
                     <span>選擇型態：</span>
+                    <button class="c-type-btn js-type-btn         " data-type="異">異</button>
+                    <button class="c-type-btn js-type-btn         " data-type="幻">幻</button>
+                </div>
+
+                <div class="c-control-group">
+                    <button class="c-type-btn js-type-btn         " data-type="巨">巨</button>
+                </div>
+
+                <div class="c-control-group">
                     <button class="c-type-btn js-type-btn c-active" data-type="普">普</button>
-                    <button class="c-type-btn js-type-btn" data-type="異">異</button>
-                    <button class="c-type-btn js-type-btn" data-type="幻">幻</button>
-                    <button class="c-type-btn js-type-btn" data-type="巨">巨</button>
-                    <button class="c-type-btn js-type-btn" data-type="晶">晶</button>
-                    <button class="c-type-btn js-type-btn" data-type="流">流</button>
-                    <button class="c-type-btn js-type-btn" data-type="星">星</button>
-                    <button class="c-type-btn js-type-btn" data-type="清">🧼 擦除</button>
+                    <button class="c-type-btn js-type-btn         " data-type="銀">銀</button>
+                    <button class="c-type-btn js-type-btn         " data-type="金">金</button>
+                    <button class="c-type-btn js-type-btn         " data-type="晶">晶</button>
+                    <button class="c-type-btn js-type-btn         " data-type="流">流</button>
+                    <button class="c-type-btn js-type-btn         " data-type="星">星</button>
+                    <button class="c-type-btn js-type-btn         " data-type="清">🧼 擦除</button>
                 </div>
 
                 <div class="c-control-group">
                     <label for="js-levelInput">果實數量：</label>
-                    <input type="number" id="js-levelInput" min="1" max="9" value="1" style="width: 45px;">
+                    <input type="number" id="js-levelInput" min="1" max="9" value="1" style="width: 50px;">
                 </div>
 
                 <div class="c-control-group">
@@ -940,13 +895,13 @@
                     <table class="c-inventory-table">
                         <thead>
                             <tr>
-                                <th style="width: 22%;">作物</th>
-                                <th style="width: 13%;">重量</th>
-                                <th style="width: 13%;">價格</th>
-                                <th style="width: 13%;">普</th>
-                                <th style="width: 13%;">異</th>
-                                <th style="width: 13%;">幻</th>
-                                <th style="width: 13%;">總</th>
+                                <th style="width: 30%;">作物</th>
+                                <th style="width: 10%;">重量</th>
+                                <th style="width: 10%;">價格</th>
+                                <th style="width: 10%;"> 普 </th>
+                                <th style="width: 10%;"> 異 </th>
+                                <th style="width: 10%;"> 幻 </th>
+                                <th style="width: 10%;"> 總 </th>
                             </tr>
                         </thead>
                         <tbody id="js-inventoryBody"></tbody>
@@ -1009,7 +964,8 @@
                 { name: '蘆薈　　', short: '蘆薈', weight: 10.2, price: "27.5 m" }, { name: '月蟾蜍　', short: '月蟾', weight: 34.0, price: "25.0 m" }, 
                 { name: '月兔　　', short: '月兔', weight: 23.8, price: "13.5 m" }, { name: '月影梅　', short: '梅樹', weight:  3.4, price: " 6.0 m" }, 
                 { name: '星空玫瑰', short: '星玫', weight: 10.2, price: "11.2 m" }, { name: '馬蹄蓮　', short: '蹄蓮', weight: 20.4, price: " 5.0 m" },
-                { name: '鈴蘭幽幽', short: '幽幽', weight: 23.8, price: "15.0 m" }, { name: '舞柿黛拉', short: '舞拉', weight: 42.5, price: "28.0 m" }
+                { name: '鈴蘭幽幽', short: '幽幽', weight: 23.8, price: "15.0 m" }, { name: '舞柿黛拉', short: '舞拉', weight: 42.5, price: "28.0 m" },
+                { name: '秋水仙　', short: '水仙', weight: 34.0, price: "33.0 m" }
             ],
             '橙色': [
                 { name: '草莓　　', short: '草莓', weight:  9.0, price: "1.25 m" }, { name: '奇異果　', short: '奇異', weight: 14.5, price: " 600 k" },
@@ -1072,38 +1028,18 @@
         let copyModeState = 'off';
         let copySourceCell = null;
         let zoneMoveSource = null;
-        const STORAGE_KEY = 'crazy-farm_V11_save';
+        const STORAGE_KEY = 'crazy-farm_V10_save';
 
         // ============================================================
-        // 【區塊三】網頁介面動態初始化與基本事件綁定 (含快捷按鈕動態排版)
+        // 【區塊三】網頁介面動態初始化與基本事件綁定
         // ============================================================
-
-        // 定義稀有度系列與預設值
-        const CROP_CATEGORIES = ['至臻', '橙色', '紫色', '藍色', '綠色', '灰色'];
-
-        // 取得或初始化「快捷鈕顯示」與「斷行」的設定狀態
-        function getQuickBtnSettings() {
-            const defaultSettings = {
-                show: { '至臻': true, '橙色': true, '紫色': true, '藍色': true, '綠色': true, '灰色': true },
-                breakAfter: { '至臻': true, '橙色': false, '紫色': false, '藍色': true, '綠色': false, '灰色': false }
-            };
-
-            const saved = localStorage.getItem('crazy-farm_quick_btn_settings');
-            if (saved) {
-                try { return JSON.parse(saved); } catch(e) {}
-            }
-            return defaultSettings;
-        }
-
-        // 儲存設定至 localStorage
-        function saveQuickBtnSettings(settings) {
-            localStorage.setItem('crazy-farm_quick_btn_settings', JSON.stringify(settings));
-        }
-
-        // 1. 生成 8 區地圖 DOM
-        function renderMapDOM() {
+                
+        function initUI() {
+            // 生成 8 塊田地網格結構
             const mapMain = document.getElementById('js-mapMain');
             mapMain.innerHTML = '';
+            
+            // 定義田地順序
             const zoneOrder = [7, 8, 5, 6, 3, 4, 1, 2];
 
             zoneOrder.forEach(z => {
@@ -1131,74 +1067,83 @@
                 gridHtml += `</div>`;
                 zoneDiv.innerHTML = gridHtml;
 
+                // 在 initUI() 內生成完 zoneDiv 後，為 .c-zone-title 綁定點擊事件
+                zoneDiv.querySelector('.c-zone-title').addEventListener('click', () => {
+                    handleZoneTitleClick(z);
+                });
+
                 mapMain.appendChild(zoneDiv);
             });
-        }
-
-        // 2. 根據勾選設定動態生成「下拉選單」與「快捷按鈕 DOM」
-        function renderCropOptionsDOM() {
-            const cropSelect = document.getElementById('js-cropSelect');
-            const quickPanel = document.getElementById('js-quickCropPanel');
-            const currentSelectedVal = cropSelect.value; // 保留當前選取的作物
             
-            cropSelect.innerHTML = '';
-            quickPanel.innerHTML = '';
+            const cropSelect = document.getElementById('js-cropSelect'    ); // 作物下拉選單
+            const quickPanel = document.getElementById('js-quickCropPanel'); // 快捷作物面板
+            quickPanel.innerHTML = ''; 
 
-            const settings = getQuickBtnSettings();
+            const categories = ['至臻', '橙色', '紫色', '藍色', '綠色', '灰色'];
+            
+            categories.forEach(cat => {
+                // 生成下拉選單群組
+                const groupOpt = document.createElement('optgroup'); 
+                groupOpt.label = cat; 
+                cropSelect.appendChild(groupOpt);
 
-            CROP_CATEGORIES.forEach(cat => {
-                // 下拉選單（一律全部載入）
-                const group = document.createElement('optgroup');
-                group.label = `${cat}系列`;
-
-                cropsData[cat].forEach(c => {
-                    const opt = document.createElement('option');
-                    opt.value = c.short;
-                    opt.textContent = `${c.name} (${c.short})`;
-                    group.appendChild(opt);
-                });
-                cropSelect.appendChild(group);
-
-                // 快捷按鈕區塊
-                if (settings.show[cat]) {
-                    cropsData[cat].forEach(c => {
-                        const qBtn = document.createElement('button');
-                        qBtn.type = 'button';
-                        qBtn.className = `c-quick-crop-btn c-q-btn-${cat} js-quick-crop-btn`;
-                        qBtn.dataset.short = c.short;
-                        qBtn.textContent = c.short;
-                        quickPanel.appendChild(qBtn);
-                    });
+                // 藍色換行排版微調
+                if (cat === '藍色') {
+                    const 
+                    br           = document.createElement('div');
+                    br.className = 'c-flex-break';
+                    quickPanel.appendChild(br);
                 }
 
-                // 若該系列設定了「斷行」，則在此系列後方加入換行標籤
-                if (settings.breakAfter[cat]) {
-                    const breakDiv = document.createElement('div');
-                    breakDiv.className = 'c-flex-break';
-                    quickPanel.appendChild(breakDiv);
+                // 生成下拉選項與快捷按鈕
+                cropsData[cat].forEach(c => {
+                    const 
+                    opt             = document.createElement('option'); 
+                    opt.value       = c.short; 
+                    opt.textContent = `${c.name}`;
+                    groupOpt.appendChild(opt);
+
+                    const qBtn = document.createElement('button');
+                    qBtn.className     = `c-quick-crop-btn c-q-btn-${cat}`;
+                    qBtn.textContent   = c.short;
+                    qBtn.title         = `${c.name} (${cat}系列)`;
+                    qBtn.dataset.short = c.short;
+
+                    qBtn.addEventListener('click', () => selectCrop(c.short));
+                    quickPanel.appendChild(qBtn);
+                });
+            });
+
+            // 頂部控制台凍結設定載入與綁定
+            const freezeChk    = document.getElementById('js-freezeHeaderChk');
+            const topContainer = document.getElementById('js-headerTopContainer');
+            
+            let cachedFreeze = localStorage.getItem('crazy-farm_V9.0_pref');
+            if (cachedFreeze === null) cachedFreeze = true; 
+            else cachedFreeze = (cachedFreeze === 'true');
+            
+            freezeChk.checked = cachedFreeze;
+            if(cachedFreeze) topContainer.classList.add('c-frozen');
+
+            freezeChk.addEventListener('change', () => {
+                if(freezeChk.checked) {
+                    topContainer.classList.add('c-frozen');
+                    localStorage.setItem('crazy-farm_V9.0_pref', 'true');
+                } else {
+                    topContainer.classList.remove('c-frozen');
+                    localStorage.setItem('crazy-farm_V9.0_pref', 'false');
                 }
             });
 
-            // 還原或預設選取狀態
-            const targetVal = currentSelectedVal || cropsData['至臻'][0].short;
-            cropSelect.value = targetVal;
-            
-            // 高亮對應的快捷按鈕（若該按鈕目前有顯示）
-            const activeBtn = quickPanel.querySelector(`[data-short="${targetVal}"]`);
-            if (activeBtn) activeBtn.classList.add('c-active');
-        }
-
-        // 3. 生成背包表格 DOM（含「快捷鈕」與「斷行」勾選控制）
-        function renderInventoryDOM() {
+            // 初始化背包庫存表格結構
             const invBody = document.getElementById('js-inventoryBody');
-            invBody.innerHTML = "";
-            const settings = getQuickBtnSettings();
+            invBody.innerHTML = ""; 
 
-            // 全場總計列
+            // 背包全場總計列
             const globalSumTr = document.createElement('tr');
             globalSumTr.className = 'c-global-inv-sum-row';
             globalSumTr.innerHTML = `
-                <td colspan="3" class="c-text-indent-sm">全部庫存總計</td>
+                <td colspan="3">全部庫存總計</td>
                 <td id="js-inv-global-普">0</td>
                 <td id="js-inv-global-異">0</td>
                 <td id="js-inv-global-幻">0</td>
@@ -1206,31 +1151,14 @@
             `;
             invBody.appendChild(globalSumTr);
 
-            // 稀有度分類列
-            CROP_CATEGORIES.forEach(cat => {
-                const catTr = document.createElement('tr');
-                const isShowChecked = settings.show[cat] ? 'checked' : '';
-                const isBreakChecked = settings.breakAfter[cat] ? 'checked' : '';
-
-                catTr.innerHTML = `
-                    <td colspan="7" class="c-cat-row">
-                        <div class="c-cat-header-flex">
-                            <span>★ ${cat}系列</span>
-                            <span class="c-cat-opts">
-                                <label class="c-cat-opt-label">
-                                    <input type="checkbox" class="js-cat-show-chk" data-cat="${cat}" ${isShowChecked}> 快捷鈕
-                                </label>
-                                <label class="c-cat-opt-label">
-                                    <input type="checkbox" class="js-cat-break-chk" data-cat="${cat}" ${isBreakChecked}> 斷行
-                                </label>
-                            </span>
-                        </div>
-                    </td>
-                `;
+            // 依稀有度建立背包內容列
+            categories.forEach(cat => {
+                // 列：各系列列
+                const catTr = document.createElement('tr'); 
+                catTr.innerHTML = `<td colspan="7" class="c-cat-row">★ ${cat}系列</td>`; 
                 invBody.appendChild(catTr);
-
-                // 系列加總列
-                const sumTr = document.createElement('tr');
+                // 列：系列加總
+                const sumTr = document.createElement('tr'); 
                 sumTr.classList.add('c-cat-sum-row');
                 sumTr.id = `js-inv-sum-${cat}`;
                 sumTr.innerHTML = `
@@ -1242,7 +1170,6 @@
                 `;
                 invBody.appendChild(sumTr);
 
-                // 各作物列
                 cropsData[cat].forEach(c => {
                     const wVal = window[`weight_${c.short}`];
                     const formattedWeight = typeof wVal === 'number' ? wVal.toFixed(1) : "0.0";
@@ -1252,150 +1179,73 @@
                     tr.innerHTML = `
                         <td class="t-${cat} c-clickable-crop c-text-indent-sm" data-short="${c.short}">${c.name}</td>
                         <td><input type="text" class="c-inv-static-input" value="${formattedWeight}" readonly tabindex="-1" data-weight-val="${formattedWeight}"></td>
-                        <td><input type="text" class="c-inv-static-input" value="${displayPrice}" readonly tabindex="-1"></td>
+                        <td><input type="text" class="c-inv-static-input" value="${displayPrice}"    readonly tabindex="-1"></td>
+
                         <td><input type="number" class="c-inv-input js-inv-input" data-short="${c.short}" data-cat="${cat}" data-mode="普" min="0" max="99999" placeholder="-"></td>
                         <td><input type="number" class="c-inv-input js-inv-input" data-short="${c.short}" data-cat="${cat}" data-mode="異" min="0" max="99999" placeholder="-"></td>
                         <td><input type="number" class="c-inv-input js-inv-input" data-short="${c.short}" data-cat="${cat}" data-mode="幻" min="0" max="99999" placeholder="-"></td>
-                        <td id="js-total-${c.short}" class="c-inv-total-display">-</td>
+                        
+                        <td id="js-total-${c.short}" class="c-inv-total-display">0</td>
                     `;
                     invBody.appendChild(tr);
                 });
             });
-        }
 
-        // 4. 綁定所有控制按鈕與地圖事件
-        function bindGlobalEvents() {
-            const cropSelect = document.getElementById('js-cropSelect');
-            const quickPanel = document.getElementById('js-quickCropPanel');
-            const invBody = document.getElementById('js-inventoryBody');
-
-            // 區標題點擊 (全區移動模式)
-            document.querySelectorAll('.c-zone-title').forEach(titleEl => {
-                const zoneId = titleEl.closest('.c-zone').dataset.zoneId;
-                titleEl.addEventListener('click', () => handleZoneTitleClick(zoneId));
+            // 背包作物名稱點擊快速選取刷子
+            document.querySelectorAll('.c-clickable-crop').forEach(element => {
+                element.addEventListener('click', () => selectCrop(element.getAttribute('data-short')));
             });
 
-            // 下拉選單同步快捷按鈕高亮
-            cropSelect.addEventListener('change', (e) => {
-                const val = e.target.value;
-                document.querySelectorAll('.js-quick-crop-btn').forEach(btn => {
-                    btn.classList.toggle('c-active', btn.dataset.short === val);
-                });
-            });
-
-            // 快捷按鈕點擊同步下拉選單
-            quickPanel.addEventListener('click', (e) => {
-                const btn = e.target.closest('.js-quick-crop-btn');
-                if (!btn) return;
-                const short = btn.dataset.short;
-                cropSelect.value = short;
-                document.querySelectorAll('.js-quick-crop-btn').forEach(b => b.classList.remove('c-active'));
-                btn.classList.add('c-active');
-            });
-
-            // 背包：快捷鈕 / 斷行 勾選切換事件監聽
-            invBody.addEventListener('change', (e) => {
-                const showChk = e.target.closest('.js-cat-show-chk');
-                const breakChk = e.target.closest('.js-cat-break-chk');
-
-                if (showChk || breakChk) {
-                    const settings = getQuickBtnSettings();
-                    if (showChk) {
-                        const cat = showChk.dataset.cat;
-                        settings.show[cat] = showChk.checked;
+            // 監聽背包輸入數值自動存檔與計算（加入 0-99999 與長度限制）
+            invBody.addEventListener('input', (e) => {
+                // 確保觸發事件的是背包輸入框
+                if (e.target && e.target.classList.contains('js-inv-input')) {
+                    let input = e.target;
+                    
+                    // 1. 長度限制：最多只能打 5 個字元
+                    if (input.value.length > 5) {
+                        input.value = input.value.slice(0, 5);
                     }
-                    if (breakChk) {
-                        const cat = breakChk.dataset.cat;
-                        settings.breakAfter[cat] = breakChk.checked;
+
+                    // 2. 數值範圍限制：負數修正為 0，超過 99999 修正為 99999
+                    let val = parseInt(input.value, 10);
+                    if (!isNaN(val)) {
+                        if (val < 0    ) input.value = 0;
+                        if (val > 99999) input.value = 99999;
                     }
-                    saveQuickBtnSettings(settings);
-                    renderCropOptionsDOM(); // 重新生成快捷列
                 }
+
+                // 執行原有的計算與存檔
+                calculateInvTotals(); 
+                autoSaveData();
             });
 
-            // 背包輸入框自動計算
-            document.querySelectorAll('.js-inv-input').forEach(input => {
-                input.addEventListener('input', calculateInvTotals);
-            });
+            // 綁定地圖單元格監聽事件
+            bindCellEvents();
+            
+            // 下拉選單連動快捷按鈕外觀
+            cropSelect.addEventListener('change', () => syncQuickCropButtons(cropSelect.value));
 
-            // 背包作物名稱點擊地圖發光高亮
-            document.querySelectorAll('.c-clickable-crop').forEach(cropTd => {
-                cropTd.addEventListener('mouseenter', (e) => highlightCropsOnMap(e.target.dataset.short));
-                cropTd.addEventListener('mouseleave', clearMapCropHighlight);
-            });
+            // 預設選取「大王菊」並同步「塗鴉按鈕 UI」
+            selectCrop('大王');
+            syncDragModeUI();
 
-            // 型態選擇按鈕
-            const typeBtns = document.querySelectorAll('.js-type-btn');
-            typeBtns.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    typeBtns.forEach(b => b.classList.remove('c-active'));
-                    btn.classList.add('c-active');
-                    currentStyle = btn.dataset.type;
-                });
-            });
-
-            // 地圖 10x10 單元格事件代理
-            document.querySelectorAll('.c-grid-10x10').forEach(grid => {
-                grid.addEventListener('mousedown', (e) => {
-                    const cell = e.target.closest('.js-cell');
-                    if (cell) {
-                        isMouseDown = true;
-                        handleCellClick(cell);
-                    }
-                });
-
-                grid.addEventListener('mouseenter', (e) => {
-                    const cell = e.target.closest('.js-cell');
-                    if (cell) {
-                        const { zone, row, col } = cell.dataset;
-                        highlightAxes(zone, row, col, true);
+            // 獨立出的地圖耕地事件綁定輔助函式
+            function bindCellEvents() {
+                const cells = document.querySelectorAll('.js-cell');
+                cells.forEach(cell => {
+                    cell.addEventListener('mousedown', () => { isMouseDown = true; handleCellClick(cell); });
+                    cell.addEventListener('mouseenter', () => { 
+                        if (isDragMode && isMouseDown && moveModeState === 'off' && copyModeState === 'off') applyBrush(cell); 
                         if (cell.dataset.crop) highlightRowInStats(cell.dataset.crop);
-                        if (isMouseDown) handleCellClick(cell);
-                    }
-                }, true);
-
-                grid.addEventListener('mouseleave', (e) => {
-                    const cell = e.target.closest('.js-cell');
-                    if (cell) {
-                        const { zone, row, col } = cell.dataset;
-                        highlightAxes(zone, row, col, false);
+                        highlightCrossAxes(cell, true); 
+                    });
+                    cell.addEventListener('mouseleave', () => {
                         clearStatsHighlight();
-                    }
-                }, true);
-            });
-
-            // 存檔與還原按鈕
-            document.getElementById('js-saveBtn').addEventListener('click', saveData);
-            document.getElementById('js-exportBtn').addEventListener('click', exportData);
-            document.getElementById('js-importBtn').addEventListener('click', () => {
-                document.getElementById('js-fileInput').click();
-            });
-        }
-
-        // 5. 載入凍結等介面偏好
-        function loadPreferences() {
-            const freezeChk = document.getElementById('js-freezeHeaderChk');
-            const headerBox = document.getElementById('js-headerContainer');
-
-            freezeChk.addEventListener('change', (e) => {
-                if (e.target.checked) headerBox.classList.add('c-frozen');
-                else headerBox.classList.remove('c-frozen');
-                localStorage.setItem('crazy-farm_freeze_header', e.target.checked ? '1' : '0');
-            });
-
-            if (localStorage.getItem('crazy-farm_freeze_header') === '1') {
-                freezeChk.checked = true;
-                headerBox.classList.add('c-frozen');
+                        highlightCrossAxes(cell, false); 
+                    });
+                });
             }
-        }
-
-        // 主初始化進入點
-        function initUI() {
-            renderMapDOM();          // 1. 生成 8 區地圖
-            renderInventoryDOM();    // 2. 生成背包表格 (必須在 renderCropOptionsDOM 前生成或並行)
-            renderCropOptionsDOM();  // 3. 生成下拉與快捷選單
-            bindGlobalEvents();      // 4. 綁定所有控制按鈕與地圖事件
-            loadPreferences();       // 5. 載入凍結等介面偏好
         }
 
         // ============================================================
@@ -1951,7 +1801,7 @@
             const summaryTr = document.createElement('tr'); 
             summaryTr.classList.add('c-total-type-row');
             summaryTr.innerHTML = `
-                <td class="c-stat-head-title">全部田間總計</td>
+                <td>全部田間總計</td>
                 ${globalCellsHtml}
                 <td class="c-stat-bg-total">${globalSum.toLocaleString()}</td>
                 <td class="c-stat-bg-fruit">${totalSeedsCount.toLocaleString()}</td>
@@ -2127,14 +1977,7 @@
         // 【區塊十三】本地瀏覽器快取儲存與資料修復載入
         // ============================================================
 
-        // 宣告資料載入鎖定開關與快取 Key
-        let isLoadingData = false;
-        const STORAGE_KEY = 'EggpartyFarmData_V11';
-
         function autoSaveData() {
-            // 若目前正在進行資料載入與初始化，絕對不執行寫入覆蓋
-            if (isLoadingData) return;
-
             const mapState = [];
             document.querySelectorAll('.c-cell[data-crop]').forEach(cell => {
                 mapState.push({ z: cell.dataset.zone, r: cell.dataset.row, c: cell.dataset.col, crop: cell.dataset.crop, style: cell.dataset.style, lvl: cell.dataset.lvl });
@@ -2155,7 +1998,7 @@
                 document.querySelectorAll('.c-cell').forEach(cell => {
                     resetCell(cell);
                 });
-                
+               
                 // 2. 恢復地圖資料
                 if(totalPackage.map) {
                     totalPackage.map.forEach(item => {
@@ -2314,14 +2157,7 @@
         // 【區塊十五】全網頁 DOM 載入完畢守護初始化
         // ============================================================      
 
-        window.addEventListener('DOMContentLoaded', () => { 
-            isLoadingData = true;  // 開啟載入保護鎖，避免 initUI 清空與觸發事件時將空資料覆寫至 LocalStorage
-            
-            initUI(); 
-            loadData(); 
-            
-            isLoadingData = false; // 畫面與資料皆渲染完畢，解除保護鎖
-        });
+        window.addEventListener('DOMContentLoaded', () => { initUI(); loadData(); });
 
     </script>
 </body>
